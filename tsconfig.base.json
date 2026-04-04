@@ -24,7 +24,6 @@
 		"resolveJsonModule": false,
 		"rootDir": "src",
 		"skipLibCheck": true,
-		"sourceMap": true,
 		"strict": true,
 		"target": "es2023",
 		"types": ["bun", "node"],
