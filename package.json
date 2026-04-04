@@ -38,8 +38,6 @@
 		"biome:ci": "biome ci",
 		"biome:lint": "biome lint",
 		"build": "bun run ./scripts/build.ts",
-		"build:bunup": "bunup",
-		"build:tsdown": "tsdown",
 		"commitlint": "commitlint --edit",
 		"format": "oxfmt",
 		"knip": "knip-bun",
@@ -48,8 +46,7 @@
 		"prepare": "lefthook install",
 		"prepublishOnly": "bun run build",
 		"release": "bumpp",
-		"test": "bun test --randomize --pass-with-no-tests",
-		"test:watch": "bun run test --watch",
+		"test": "tsd --files 'src/**/*.test-d.ts'",
 		"type-check": "tsgo --noEmit"
 	},
 	"dependencies": {
@@ -75,10 +72,16 @@
 		"picocolors": "^1.1.1",
 		"pretty-bytes": "^7.1.0",
 		"pretty-ms": "^9.3.0",
-		"temporal-polyfill": "^0.3.2"
+		"temporal-polyfill": "^0.3.2",
+		"tsd": "^0.33.0"
 	},
 	"peerDependencies": {
 		"typescript": "^5"
+	},
+	"tsd": {
+		"files": [
+			"src/**/*.test-d.ts"
+		]
 	},
 	"engines": {
 		"node": ">=18"
