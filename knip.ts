@@ -5,7 +5,7 @@ const configuration: KnipConfig = {
 	bumpp: true,
 	bun: true,
 	commitlint: true,
-	ignore: [],
+	ignore: ["src/index.test-d.ts"],
 	ignoreBinaries: ["lefthook"],
 	ignoreDependencies: [],
 	lefthook: true,
