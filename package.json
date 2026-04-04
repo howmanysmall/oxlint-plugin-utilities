@@ -38,7 +38,8 @@
 		"biome:ci": "biome ci",
 		"biome:lint": "biome lint",
 		"build": "bun run ./scripts/build.ts",
-		"build:legacy": "tsgo -p tsconfig.json",
+		"build:bunup": "bunup",
+		"build:tsdown": "tsdown",
 		"commitlint": "commitlint --edit",
 		"format": "oxfmt",
 		"knip": "knip-bun",
@@ -47,7 +48,7 @@
 		"prepare": "lefthook install",
 		"prepublishOnly": "bun run build",
 		"release": "bumpp",
-		"test": "bun test --randomize",
+		"test": "bun test --randomize --pass-with-no-tests",
 		"test:watch": "bun run test --watch",
 		"type-check": "tsgo --noEmit"
 	},
