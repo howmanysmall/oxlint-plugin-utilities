@@ -1,0 +1,85 @@
+{
+	"name": "oxlint-plugin-utilities",
+	"version": "0.1.0",
+	"description": "A smarter wrapper around Oxlint's JS plugins types.",
+	"keywords": [
+		"lint",
+		"linting",
+		"oxlint",
+		"plugin",
+		"rules",
+		"utilities"
+	],
+	"license": "MIT",
+	"author": {
+		"name": "HowManySmall"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/howmanysmall/oxlint-plugin-utilities.git"
+	},
+	"files": [
+		"dist"
+	],
+	"type": "module",
+	"module": "src/index.ts",
+	"types": "./dist/index.d.ts",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js"
+		}
+	},
+	"publishConfig": {
+		"access": "public"
+	},
+	"scripts": {
+		"biome:check": "biome check",
+		"biome:ci": "biome ci",
+		"biome:lint": "biome lint",
+		"build": "bun run ./scripts/build.ts",
+		"build:legacy": "tsgo -p tsconfig.json",
+		"commitlint": "commitlint --edit",
+		"format": "oxfmt",
+		"knip": "knip-bun",
+		"lint": "bash -c 'a=$(bash scripts/default-src.sh \"$@\"); bun run oxc $a && bun run biome:check $a' _",
+		"oxc": "oxlint",
+		"prepare": "lefthook install",
+		"prepublishOnly": "bun run build",
+		"release": "bumpp",
+		"test": "bun test --randomize",
+		"test:watch": "bun run test --watch",
+		"type-check": "tsgo --noEmit"
+	},
+	"dependencies": {
+		"@oxlint/plugins": "^1.58.0",
+		"type-fest": "^5.5.0"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.4.10",
+		"@commitlint/config-conventional": "^20.5.0",
+		"@commitlint/types": "^20.5.0",
+		"@jsr/cliffy__command": "^1.0.0",
+		"@total-typescript/ts-reset": "^0.6.1",
+		"@types/bun": "latest",
+		"@types/node": "^25.5.2",
+		"@typescript/native-preview": "^7.0.0-dev.20260403.1",
+		"bumpp": "^11.0.1",
+		"commitlint": "^20.5.0",
+		"consola": "^3.4.2",
+		"knip": "^6.3.0",
+		"oxfmt": "^0.43.0",
+		"oxlint": "^1.58.0",
+		"oxlint-tsgolint": "^0.19.0",
+		"picocolors": "^1.1.1",
+		"pretty-bytes": "^7.1.0",
+		"pretty-ms": "^9.3.0",
+		"temporal-polyfill": "^0.3.2"
+	},
+	"peerDependencies": {
+		"typescript": "^5"
+	},
+	"engines": {
+		"node": ">=18"
+	}
+}
