@@ -12,6 +12,9 @@ import type { Plugin, Rule } from "./types";
  * @param plugin - Plugin to define
  * @returns Same plugin as passed in
  */
-export function definePlugin<TRules extends Record<string, OxlintRule | Rule>>(plugin: Plugin<TRules>): Plugin<TRules> {
+// oxlint-disable-next-line no-explicit-any
+export function definePlugin<TRules extends Record<string, OxlintRule | Rule<any, any>>>(
+	plugin: Plugin<TRules>,
+): Plugin<TRules> {
 	return plugin;
 }
