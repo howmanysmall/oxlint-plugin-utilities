@@ -373,7 +373,7 @@ async function runBuildAsync(options: BuildOptions): Promise<BuildResult> {
 		}
 
 		const declarationBuildPromise = generateBundledDeclarationsAsync(options.verbose);
-		const { buildMetadata } = await import("./plugins/build-metadata");
+		const { buildMetadata } = await import("./plugins/bun/build-metadata");
 
 		const [buildResult] = await Promise.all([
 			Bun.build({
