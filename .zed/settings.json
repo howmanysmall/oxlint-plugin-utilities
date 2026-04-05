@@ -51,7 +51,7 @@
 		"CSS": {
 			"code_actions_on_format": {
 				"source.fixAll.biome": true,
-				"source.organizeImports.biome": true
+				"source.organizeImports.biome": false
 			},
 			"format_on_save": "on",
 			"formatter": [{ "language_server": { "name": "biome" } }, { "language_server": { "name": "oxfmt" } }],
@@ -71,7 +71,7 @@
 		"JSON": {
 			"code_actions_on_format": {
 				"source.fixAll.biome": true,
-				"source.organizeImports.biome": true
+				"source.organizeImports.biome": false
 			},
 			"format_on_save": "on",
 			"formatter": [{ "language_server": { "name": "biome" } }, { "language_server": { "name": "oxfmt" } }],
@@ -82,7 +82,7 @@
 		"JSON5": {
 			"code_actions_on_format": {
 				"source.fixAll.biome": true,
-				"source.organizeImports.biome": true
+				"source.organizeImports.biome": false
 			},
 			"format_on_save": "on",
 			"formatter": { "language_server": { "name": "oxfmt" } },
@@ -93,7 +93,7 @@
 		"JSONC": {
 			"code_actions_on_format": {
 				"source.fixAll.biome": true,
-				"source.organizeImports.biome": true
+				"source.organizeImports.biome": false
 			},
 			"format_on_save": "on",
 			"formatter": [{ "language_server": { "name": "biome" } }, { "language_server": { "name": "oxfmt" } }],
@@ -143,7 +143,7 @@
 			"code_actions_on_format": {
 				"source.fixAll.biome": true,
 				"source.fixAll.oxc": true,
-				"source.organizeImports.biome": true
+				"source.organizeImports.biome": false
 			},
 			"format_on_save": "on",
 			"formatter": [{ "language_server": { "name": "biome" } }, { "language_server": { "name": "oxfmt" } }],
@@ -165,7 +165,7 @@
 			"code_actions_on_format": {
 				"source.fixAll.biome": true,
 				"source.fixAll.oxc": true,
-				"source.organizeImports.biome": true
+				"source.organizeImports.biome": false
 			},
 			"format_on_save": "on",
 			"formatter": [{ "language_server": { "name": "oxfmt" } }],
