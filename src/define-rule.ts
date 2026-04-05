@@ -1,4 +1,4 @@
-import type { CreateRule } from "./types";
+import type { Rule } from "./types";
 
 /**
  * Define a rule.
@@ -12,7 +12,7 @@ import type { CreateRule } from "./types";
  * @returns Same rule as passed in
  */
 export function defineRule<TOptions, TMessageIds extends string>(
-	rule: CreateRule<TOptions, TMessageIds>,
-): CreateRule<TOptions, TMessageIds> {
+	rule: Rule<TOptions, TMessageIds>,
+): Rule<TOptions, TMessageIds> {
 	return rule;
 }
