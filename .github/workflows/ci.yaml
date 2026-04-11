@@ -6,21 +6,25 @@ on:
       - main
     paths:
       - "src/**/*.ts"
+      - "tests/**/*.ts"
       - "scripts/**/*.ts"
       - "package.json"
       - "bun.lock"
       - "knip.ts"
       - "tsconfig*.json"
+      - "vitest.config.ts"
       - ".oxlintrc.json"
       - "biome.jsonc"
   pull_request:
     paths:
       - "src/**/*.ts"
+      - "tests/**/*.ts"
       - "scripts/**/*.ts"
       - "package.json"
       - "bun.lock"
       - "knip.ts"
       - "tsconfig*.json"
+      - "vitest.config.ts"
       - ".oxlintrc.json"
       - "biome.jsonc"
 
@@ -78,5 +82,5 @@ jobs:
           fi
           echo "Build artifacts OK"
 
-      - name: Type tests
+      - name: Tests
         run: bun run test
