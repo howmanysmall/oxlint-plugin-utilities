@@ -10,7 +10,6 @@
 	"edit_predictions": {
 		"codestral": {},
 		"copilot": { "enable_next_edit_suggestions": true },
-		"enabled_in_text_threads": true,
 		"mode": "eager"
 	},
 	"ensure_final_newline_on_save": true,
@@ -231,10 +230,10 @@
 						"enumMemberValues": { "enabled": true },
 						"functionLikeReturnTypes": { "enabled": true },
 						"parameterNames": {
-							"enabled": "all",
+							"enabled": "none",
 							"suppressWhenArgumentMatchesName": false
 						},
-						"parameterTypes": { "enabled": true },
+						"parameterTypes": { "enabled": false },
 						"propertyDeclarationTypes": { "enabled": true }
 					},
 					"updateImportsOnFileMove": { "enabled": "always" } // or is it "updateImportsOnFileMove": "always"?
@@ -244,10 +243,10 @@
 						"enumMemberValues": { "enabled": true },
 						"functionLikeReturnTypes": { "enabled": true },
 						"parameterNames": {
-							"enabled": "all",
+							"enabled": "none",
 							"suppressWhenArgumentMatchesName": false
 						},
-						"parameterTypes": { "enabled": true },
+						"parameterTypes": { "enabled": false },
 						"propertyDeclarationTypes": { "enabled": true }
 					},
 					"preferences": { "includePackageJsonAutoImports": "on" },

@@ -27,7 +27,7 @@ interface PreserveCommentsOptions {
 interface Edit {
 	readonly index: number;
 	readonly insert: string;
-	readonly replaceLen: number;
+	readonly replaceLength: number;
 }
 
 const JSDOC_BEFORE_DECLARATION =
@@ -66,7 +66,7 @@ export function createPreserveCommentsPlugin({ outputDirectory }: PreserveCommen
 		name: "preserve-comments",
 
 		setup(pluginBuilder) {
-			pluginBuilder.onLoad({ filter: ONLY_TSX }, ({ path }) => {
+			pluginBuilder.onLoad({ filter: ONLY_TSX }, function onLoad({ path }) {
 				if (
 					path.includes("node_modules") ||
 					path.endsWith(".d.ts") ||
@@ -74,7 +74,7 @@ export function createPreserveCommentsPlugin({ outputDirectory }: PreserveCommen
 					path.endsWith(".test-d.ts") ||
 					path.endsWith(".spec.ts")
 				) {
-					return undefined;
+					return;
 				}
 
 				try {
@@ -85,16 +85,14 @@ export function createPreserveCommentsPlugin({ outputDirectory }: PreserveCommen
 					while ((match = JSDOC_BEFORE_DECLARATION.exec(source)) !== null) {
 						const comment = match.groups?.comment;
 						const name = match.groups?.name;
-						if (comment && name) storedComments.set(name, comment);
+						if (comment !== undefined && name !== undefined) storedComments.set(name, comment);
 					}
 				} catch {
 					// Non-fatal – the file will still be processed normally.
 				}
-
-				return undefined;
 			});
 
-			pluginBuilder.onEnd(() => {
+			pluginBuilder.onEnd(function onEnd() {
 				if (storedComments.size === 0 || !existsSync(outputDirectory)) return;
 
 				function getReindented(
@@ -108,7 +106,7 @@ export function createPreserveCommentsPlugin({ outputDirectory }: PreserveCommen
 						cache.set(comment, cacheEntry);
 					}
 					let result = cacheEntry.get(indent);
-					if (!result) {
+					if (result === undefined || result.length === 0) {
 						result = reindentComment(comment, indent);
 						cacheEntry.set(indent, result);
 					}
@@ -153,7 +151,7 @@ export function createPreserveCommentsPlugin({ outputDirectory }: PreserveCommen
 						edits.push({
 							index: match.index,
 							insert: `${prefix}${reindented}\n${indent}${declaration}`,
-							replaceLen: match[0].length,
+							replaceLength: match[0].length,
 						});
 					}
 
@@ -161,7 +159,7 @@ export function createPreserveCommentsPlugin({ outputDirectory }: PreserveCommen
 
 					edits.sort((editA, editB) => editB.index - editA.index);
 					for (const edit of edits) {
-						content = `${content.slice(0, edit.index)}${edit.insert}${content.slice(edit.index + edit.replaceLen)}`;
+						content = `${content.slice(0, edit.index)}${edit.insert}${content.slice(edit.index + edit.replaceLength)}`;
 					}
 
 					writeFileSync(filePath, content);

@@ -155,7 +155,7 @@ function formatBuildMessage({ position, message }: BuildRelatedMessage): string 
 		parts[size++] = `${gray(String(line))} | ${lineText}`;
 
 		const padding = " ".repeat(String(line).length + 3 + column - 1);
-		const underline = "^".repeat(Math.max(1, length ?? 1));
+		const underline = "^".repeat(Math.max(1, length));
 		parts[size++] = `${padding}${red(underline)}`;
 	}
 
@@ -339,8 +339,7 @@ async function getOutputFilesAsync(directory: string): Promise<ReadonlyArray<Out
 	}
 
 	const files = await walk(directory);
-	// oxlint-disable-next-line no-array-sort
-	return [...files].sort((left, right) => left.path.localeCompare(right.path));
+	return [...files].toSorted((left, right) => left.path.localeCompare(right.path));
 }
 
 async function runBuildAsync(options: BuildOptions): Promise<BuildResult> {

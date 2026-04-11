@@ -15,7 +15,6 @@
 		"node": true,
 	},
 	"extends": [],
-	"globals": {},
 	"ignorePatterns": [
 		"dist",
 		"**/do-not-sync-ever/**",
@@ -51,12 +50,19 @@
 			"globals": {
 				"Bun": "readonly",
 			},
+			"rules": {
+				"complexity": "off",
+				"max-lines": "off",
+				"max-lines-per-function": "off",
+				"no-bitwise": "off",
+				"no-console": "off",
+			},
 		},
 	],
 	"plugins": ["eslint", "import", "jsdoc", "node", "oxc", "promise", "typescript", "unicorn"],
 	"rules": {
 		"arrow-body-style": ["error", "as-needed"],
-		"complexity": "off",
+		"complexity": "error",
 		"curly": ["error", "multi-line"],
 		"default-case": "off",
 		"eqeqeq": "error",
@@ -72,7 +78,7 @@
 		"eslint/no-use-before-define": "off",
 		"eslint/require-await": "off",
 		"for-direction": "error",
-		"func-names": ["off", "never", { "generators": "never" }],
+		"func-names": ["error", "as-needed", { "generators": "as-needed" }],
 		"func-style": [
 			"error",
 			"declaration",
@@ -120,8 +126,8 @@
 		"jsdoc/require-param-type": "off",
 		"jsdoc/require-property-type": "off",
 		"jsdoc/require-returns-type": "off",
-		"max-lines": "off",
-		"max-lines-per-function": "off",
+		"max-lines": "error",
+		"max-lines-per-function": "error",
 		"max-params": [
 			"error",
 			{
@@ -130,16 +136,16 @@
 			},
 		],
 		"max-statements": "off",
-		"new-cap": "off",
+		"new-cap": "error",
 		"no-array-constructor": "off",
 		"no-async-promise-executor": "error",
 		"no-await-in-loop": "error",
-		"no-bitwise": "off",
+		"no-bitwise": "error",
 		"no-case-declarations": "error",
 		"no-class-assign": "error",
 		"no-compare-neg-zero": "error",
 		"no-cond-assign": "error",
-		"no-console": "off",
+		"no-console": "error",
 		"no-const-assign": "error",
 		"no-constant-binary-expression": "error",
 		"no-constant-condition": "error",
@@ -151,7 +157,13 @@
 		"no-dupe-else-if": "error",
 		"no-dupe-keys": "error",
 		"no-duplicate-case": "error",
-		"no-duplicate-imports": "off",
+		"no-duplicate-imports": [
+			"error",
+			{
+				"allowSeparateTypeImports": true,
+				"includeExports": false,
+			},
+		],
 		"no-else-return": "off",
 		"no-empty": "error",
 		"no-empty-character-class": "error",
@@ -195,6 +207,8 @@
 		"no-unused-labels": "error",
 		"no-unused-private-class-members": "error",
 		"no-unused-vars": "error",
+		// rule that does not work!
+		"no-useless-assignment": "off",
 		"no-useless-backreference": "error",
 		"no-useless-catch": "error",
 		"no-useless-concat": "error",
@@ -222,6 +236,7 @@
 		"prefer-spread": "error",
 		"prefer-template": "error",
 		"promise/avoid-new": "off",
+		// This rule sucks man wtf
 		"promise/prefer-await-to-callbacks": "off",
 		"require-yield": "error",
 		"sort-imports": [
@@ -252,14 +267,16 @@
 			},
 		],
 		// nursery... obviously. because it doesn't work.
-		"typescript/consistent-return": "off",
-		"typescript/no-unnecessary-condition": "off",
-		"typescript/no-unsafe-type-assertion": "off",
-		// types can be wrong.
-		"typescript/no-useless-default-assignment": "off",
-		"typescript/prefer-optional-chain": "off",
+		"typescript/consistent-return": "error",
+		"typescript/no-unnecessary-condition": "error",
+		"typescript/no-unsafe-type-assertion": "error",
+		// Types can be wrong, especially when dealing with packages that use `.d.ts` instead.
+		// Highly recommended to disable this on a case-by-case basis.
+		"typescript/no-useless-default-assignment": "error",
+		"typescript/prefer-optional-chain": "error",
+		// Not always in my control.
 		"typescript/prefer-readonly-parameter-types": "off",
-		"typescript/strict-boolean-expressions": "off",
+		"typescript/strict-boolean-expressions": "error",
 		"typescript/use-unknown-in-catch-callback-variable": "error",
 		"unicorn/catch-error-name": "error",
 		"unicorn/consistent-assert": "error",
@@ -295,7 +312,7 @@
 		"unicorn/no-new-buffer": "error",
 		"unicorn/no-null": "error",
 		"unicorn/no-object-as-default-parameter": "error",
-		"unicorn/no-process-exit": "off",
+		"unicorn/no-process-exit": "error",
 		"unicorn/no-static-only-class": "error",
 		"unicorn/no-this-assignment": "error",
 		"unicorn/no-typeof-undefined": "error",

@@ -9,7 +9,7 @@ function stringifyUnknownError(error: unknown): string {
 export const buildMetadata: Bun.BunPlugin = {
 	name: "build-metadata",
 	setup(pluginBuilder: Bun.PluginBuilder) {
-		pluginBuilder.onStart(async () => {
+		pluginBuilder.onStart(async function onStartAsync() {
 			try {
 				const { stdout } = await Bun.$`git rev-parse HEAD`.quiet();
 				const commit = stdout.toString("utf8").trim();
