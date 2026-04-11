@@ -11,7 +11,7 @@ import type { Rule } from "./types";
  * @param rule - Rule to define
  * @returns Same rule as passed in
  */
-export function defineRule<TOptions, TMessageIds extends string>(
+export function defineRule<TOptions = Record<string, never>, TMessageIds extends string = string>(
 	rule: Rule<TOptions, TMessageIds>,
 ): Rule<TOptions, TMessageIds> {
 	return rule;

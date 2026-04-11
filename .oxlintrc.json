@@ -109,6 +109,12 @@
 		"import/no-named-export": "off",
 		"import/no-nodejs-modules": "off",
 		"import/no-relative-parent-imports": "off",
+		"import/no-unassigned-import": [
+			"error",
+			{
+				"allow": ["**/*.css", "@total-typescript/ts-reset"],
+			},
+		],
 		"import/prefer-default-export": "off",
 		"init-declarations": "off",
 		"jsdoc/require-param-type": "off",
@@ -303,12 +309,6 @@
 		"unicorn/no-useless-promise-resolve-reject": "error",
 		"unicorn/no-useless-switch-case": "error",
 		"unicorn/no-zero-fractions": "error",
-		"import/no-unassigned-import": [
-			"error",
-			{
-				"allow": ["**/*.css", "@total-typescript/ts-reset"],
-			},
-		],
 		"unicorn/number-literal-case": "off",
 		"unicorn/numeric-separators-style": "error",
 		"unicorn/prefer-array-find": "error",
