@@ -483,7 +483,10 @@ function getDeclaredStatementSymbols(statement: ts.Statement, checker: ts.TypeCh
 }
 
 function getExternalOrLocalImportBinding(symbol: ts.Symbol): ExternalImportBinding | undefined {
-	for (const declaration of symbol.getDeclarations() ?? []) {
+	const declarations = symbol.getDeclarations();
+	if (declarations === undefined) return undefined;
+
+	for (const declaration of declarations) {
 		if (ts.isImportSpecifier(declaration)) {
 			const importDeclaration = getImportDeclaration(declaration);
 			const moduleSpecifier = getModuleSpecifierText(importDeclaration.moduleSpecifier);

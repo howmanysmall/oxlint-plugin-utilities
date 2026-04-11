@@ -152,8 +152,10 @@
 				"!eslint",
 				"!tailwindcss-language-server",
 				"!typescript-language-server",
+				"!tsgo", // completely breaks oxlint for some reason.
+				"biome",
 				"oxfmt",
-				"tsgo",
+				"oxlint",
 				"vtsls",
 				"..."
 			],
@@ -167,15 +169,17 @@
 				"source.organizeImports.biome": false
 			},
 			"format_on_save": "on",
-			"formatter": [{ "language_server": { "name": "oxfmt" } }],
+			"formatter": [{ "language_server": { "name": "biome" } }, { "language_server": { "name": "oxfmt" } }],
 			"hard_tabs": true,
 			"language_servers": [
 				"!deno",
 				"!eslint",
 				"!tailwindcss-language-server",
 				"!typescript-language-server",
+				"!tsgo", // completely breaks oxlint for some reason.
+				"biome",
 				"oxfmt",
-				"tsgo",
+				"oxlint",
 				"vtsls",
 				"..."
 			],
@@ -195,10 +199,6 @@
 			"settings": { "bashIde": { "globPattern": "**/*@(.sh|.inc|.bash|.command|.zsh)" } }
 		},
 		"biome": {
-			"binary": {
-				"arguments": ["x", "--bun", "biome", "lsp-proxy"],
-				"path": "bun"
-			},
 			"settings": {
 				"biome": {
 					"configurationPath": "./biome.jsonc",
@@ -236,7 +236,7 @@
 						"parameterTypes": { "enabled": false },
 						"propertyDeclarationTypes": { "enabled": true }
 					},
-					"updateImportsOnFileMove": { "enabled": "always" } // or is it "updateImportsOnFileMove": "always"?
+					"updateImportsOnFileMove": { "enabled": "always" }
 				},
 				"typescript": {
 					"inlayHints": {
