@@ -266,20 +266,6 @@
 			},
 			"prettier": { "allowed": false }
 		},
-		"Vue.js": {
-			"format_on_save": "on",
-			"formatter": {
-				"language_server": { "name": "oxfmt" }
-			},
-			"prettier": { "allowed": false }
-		},
-		"YAML": {
-			"format_on_save": "on",
-			"formatter": {
-				"language_server": { "name": "oxfmt" }
-			},
-			"tab_size": 4
-		},
 		"YAML": {
 			"format_on_save": "on",
 			"formatter": {
@@ -353,8 +339,8 @@
 							"enabled": "none",
 							"suppressWhenArgumentMatchesName": false
 						},
-						"parameterTypes": { "enabled": false },
-						"propertyDeclarationTypes": { "enabled": true }
+						"parameterTypes": { "enabled": true },
+						"propertyDeclarationTypes": { "enabled": false }
 					},
 					"preferences": { "includePackageJsonAutoImports": "on" },
 					"updateImportsOnFileMove": { "enabled": "always" }
