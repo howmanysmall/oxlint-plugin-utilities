@@ -12,8 +12,14 @@ export type {
 	InferSchemaType,
 	Plugin,
 	Rule,
+	RuleArraySchema,
 	RuleMeta,
 	RuleOptions,
+	RuleSchema,
+	RuleSchemaDefinition,
+	RuleSchemaTypeName,
+	RuleSchemaValue,
+	RuleObjectSchema,
 } from "./types";
 
 export type {

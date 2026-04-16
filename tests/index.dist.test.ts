@@ -1,10 +1,10 @@
 import { describe, expect, test } from "vitest";
 
-import { definePlugin, defineRule } from "../src/index";
+import { definePlugin, defineRule } from "../dist/index.js";
 
-import type { CreateRule, Plugin, Rule } from "../src/index";
+import type { CreateRule, Plugin, Rule } from "../dist/index.js";
 
-describe("defineRule()", () => {
+describe("dist defineRule()", () => {
 	test("returns the same rule instance", () => {
 		const rule = {
 			create: () => ({}),
@@ -14,7 +14,7 @@ describe("defineRule()", () => {
 	}, 1000);
 });
 
-describe("definePlugin()", () => {
+describe("dist definePlugin()", () => {
 	test("returns the same plugin instance", () => {
 		const createRule = defineRule({
 			create: () => ({}),

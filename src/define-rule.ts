@@ -1,24 +1,25 @@
-import type { InferOptionsFromSchema, Rule } from "./types";
+import type { CreateOnceRule, CreateRule, InferOptionsFromSchema, Rule, RuleSchemaDefinition } from "./types";
 
 /**
  * Define a rule.
  *
- * No-op function, just to provide type safety. Input is passed through unchanged. This is a stronger typed version of
- * the original defineRule.
+ * No-op function, just to provide type safety. Input is passed through unchanged.
  *
- * The options type (`TOptions`) is automatically inferred from the rule's `meta.schema` definition. When no schema is
- * provided, `TOptions` defaults to `Record<string, never>`.
- *
- * @template TSchema - The inferred schema tuple type (preserved literally via `const`)
- * @template TMessageIds - The message IDs type
- * @param rule - Rule to define
- * @returns Same rule as passed in
+ * The options tuple is inferred from `meta.schema`, message IDs are inferred from `meta.messages`, and the returned
+ * rule preserves whether the input used `create` or `createOnce`.
  */
 export function defineRule<
-	const TSchema extends ReadonlyArray<unknown> = ReadonlyArray<unknown>,
+	const TSchema extends RuleSchemaDefinition | undefined = undefined,
 	TMessageIds extends string = string,
 >(
-	rule: Rule<InferOptionsFromSchema<TSchema>, TMessageIds, TSchema>,
-): Rule<InferOptionsFromSchema<TSchema>, TMessageIds> {
-	return rule as Rule<InferOptionsFromSchema<TSchema>, TMessageIds>;
+	rule: CreateRule<InferOptionsFromSchema<TSchema>, TMessageIds, TSchema>,
+): CreateRule<InferOptionsFromSchema<TSchema>, TMessageIds, TSchema>;
+export function defineRule<
+	const TSchema extends RuleSchemaDefinition | undefined = undefined,
+	TMessageIds extends string = string,
+>(
+	rule: CreateOnceRule<InferOptionsFromSchema<TSchema>, TMessageIds, TSchema>,
+): CreateOnceRule<InferOptionsFromSchema<TSchema>, TMessageIds, TSchema>;
+export function defineRule(rule: Rule): Rule {
+	return rule;
 }

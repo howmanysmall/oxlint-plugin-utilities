@@ -25,17 +25,12 @@ Requires `typescript ^5.0` as a peer dependency.
 ### Define a Rule
 
 `defineRule` helps you create Oxlint rules with full type safety for your
-`context.report` messages and rule `options`. You must explicitly define the
-options type and message IDs as type parameters.
+`context.report` messages and rule `options`. The options tuple is inferred
+from `meta.schema`, and message IDs are inferred from `meta.messages`.
 
 ```typescript
 import { defineRule } from "oxlint-plugin-utilities";
-
-interface MyRuleOptions {
-  readonly allowList?: string[];
-}
-
-export const myRule = defineRule<MyRuleOptions, "unexpectedFoo">({
+export const myRule = defineRule({
   meta: {
     docs: {
       description: "Disallow use of foo",
@@ -46,14 +41,29 @@ export const myRule = defineRule<MyRuleOptions, "unexpectedFoo">({
     messages: {
       unexpectedFoo: "Unexpected usage of 'foo'.",
     },
+    schema: [
+      {
+        properties: {
+          allowList: {
+            items: { type: "string" },
+            type: "array",
+          },
+        },
+        type: "object",
+      },
+      {
+        enum: ["warn", "error"],
+        type: "string",
+      },
+    ] as const,
   },
   create(context) {
-    const options = context.options[0] ?? {};
+    const [options, severity] = context.options;
     const allowList = options.allowList ?? [];
 
     return {
       Identifier(node) {
-        if (node.name === "foo" && !allowList.includes(node.name)) {
+        if (severity === "error" && node.name === "foo" && !allowList.includes(node.name)) {
           context.report({
             node,
             messageId: "unexpectedFoo", // Type-safe message IDs
@@ -88,10 +98,10 @@ export default definePlugin({
 
 ## API
 
-### `defineRule<TOptions, TMessageIds>(rule)`
+### `defineRule(rule)`
 
-A helper to define a rule. It infers the types for `context.report` and the
-`options` passed to the rule.
+A helper to define a rule. It infers the types for `context.report`,
+`context.options`, and `meta.defaultOptions` from the schema you provide.
 
 ### `definePlugin<TRules>(plugin: Plugin<TRules>)`
 
@@ -105,8 +115,10 @@ A helper to define a plugin object containing multiple rules.
 This package re-exports all core types used by oxlint and helper aliases:
 
 - **Local package types**: `Context`, `CreateRule`, `CreateOnceRule`,
-  `Diagnostic`, `InferContextFromRule`, `Plugin`, `Rule`, `RuleMeta`,
-  `RuleOptions`.
+  `Diagnostic`, `InferContextFromRule`, `InferOptionsFromSchema`,
+  `InferSchemaPropertyType`, `InferSchemaType`, `Plugin`, `Rule`,
+  `RuleArraySchema`, `RuleMeta`, `RuleObjectSchema`, `RuleOptions`,
+  `RuleSchema`, `RuleSchemaDefinition`, `RuleSchemaTypeName`.
 - **Types from `@oxlint/plugins`**:
   `AfterHook`, `BeforeHook`, `BooleanToken`, `Comment`, `CountOptions`,
   `Definition`, `DefinitionType`, `DiagnosticData`, `Envs`, `ESTree`,
