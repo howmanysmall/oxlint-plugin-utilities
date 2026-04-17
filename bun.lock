@@ -6,7 +6,6 @@
       "name": "oxlint-plugin-utilities",
       "dependencies": {
         "@oxlint/plugins": "^1.59.0",
-        "oxc-parser": "^0.126.0",
         "type-fest": "^5.5.0",
       },
       "devDependencies": {
