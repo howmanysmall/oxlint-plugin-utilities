@@ -1,12 +1,12 @@
 import { extname } from "node:path";
 import { parseSync } from "oxc-parser";
-import { defineRule } from "oxlint-plugin-utilities";
 
+import { defineRule } from "../../../../src/index";
 import { hasCodeLines } from "../utilities/recognizers/code-recognizer";
 import { createJavaScriptDetectors } from "../utilities/recognizers/javascript-footprint";
 import { isRecord } from "../utilities/type-utilities";
 
-import type { Comment, ESTree, Fix, SourceCode, Visitor } from "oxlint-plugin-utilities";
+import type { Comment, ESTree, Fix, SourceCode, Visitor } from "../../../../src/index";
 
 const EXCLUDED_STATEMENTS = new Set(["BreakStatement", "ContinueStatement", "LabeledStatement"]);
 function isExcludedStatement(

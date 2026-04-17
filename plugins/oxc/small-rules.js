@@ -1,55 +1,59 @@
-import { definePlugin as mj } from "oxlint-plugin-utilities";
-import { defineRule as Oy } from "oxlint-plugin-utilities";
+function h(y) {
+	return y;
+}
+function M(y) {
+	return y;
+}
 function B(y) {
 	return typeof y === "object" && y !== null && !Array.isArray(y);
 }
-function u(y) {
+function m(y) {
 	if (!Array.isArray(y)) return !1;
-	for (let j of y) if (typeof j !== "string") return !1;
+	for (let T of y) if (typeof T !== "string") return !1;
 	return !0;
 }
-function p(y) {
+function l(y) {
 	if (!B(y)) return !1;
-	for (let j of Object.values(y)) if (typeof j !== "string") return !1;
+	for (let T of Object.values(y)) if (typeof T !== "string") return !1;
 	return !0;
 }
-var zy = new Map([["omit", { originalName: "Omit", replacementName: "Except" }]]);
+var Wy = new Map([["omit", { originalName: "Omit", replacementName: "Except" }]]);
 function Gy(y) {
-	let j = new Map(zy);
-	if (!B(y) || !("bannedTypes" in y)) return j;
-	let { bannedTypes: Q } = y;
-	if (Q === void 0) return j;
-	if (u(Q)) {
-		for (let q of Q) j.set(q.toLowerCase(), { originalName: q, replacementName: void 0 });
-		return j;
+	let T = new Map(Wy);
+	if (!B(y) || !("bannedTypes" in y)) return T;
+	let { bannedTypes: j } = y;
+	if (j === void 0) return T;
+	if (m(j)) {
+		for (let Q of j) T.set(Q.toLowerCase(), { originalName: Q, replacementName: void 0 });
+		return T;
 	}
-	if (p(Q)) for (let [q, Z] of Object.entries(Q)) j.set(q.toLowerCase(), { originalName: q, replacementName: Z });
-	return j;
+	if (l(j)) for (let [Q, q] of Object.entries(j)) T.set(Q.toLowerCase(), { originalName: Q, replacementName: q });
+	return T;
 }
-function ky(y) {
+function zy(y) {
 	if (y.type === "Identifier") return y.name;
 	if (y.type === "TSQualifiedName") return y.right.name;
 	return;
 }
-var Fy = Oy({
+var Ry = M({
 		create(y) {
-			let j = Gy(y.options[0]);
-			if (j.size === 0) return {};
+			let T = Gy(y.options[0]);
+			if (T.size === 0) return {};
 			return {
-				TSTypeReference(Q) {
-					let q = ky(Q.typeName);
+				TSTypeReference(j) {
+					let Q = zy(j.typeName);
+					if (Q === void 0) return;
+					let q = T.get(Q.toLowerCase());
 					if (q === void 0) return;
-					let Z = j.get(q.toLowerCase());
-					if (Z === void 0) return;
-					if (Z.replacementName !== void 0 && Z.replacementName !== "") {
+					if (q.replacementName !== void 0 && q.replacementName !== "") {
 						y.report({
-							data: { replacementName: Z.replacementName, typeName: Z.originalName },
+							data: { replacementName: q.replacementName, typeName: q.originalName },
 							messageId: "bannedTypeWithReplacement",
-							node: Q.typeName,
+							node: j.typeName,
 						});
 						return;
 					}
-					y.report({ data: { typeName: Z.originalName }, messageId: "bannedType", node: Q.typeName });
+					y.report({ data: { typeName: q.originalName }, messageId: "bannedType", node: j.typeName });
 				},
 			};
 		},
@@ -79,92 +83,91 @@ var Fy = Oy({
 			type: "problem",
 		},
 	}),
-	m = Fy;
-import { extname as hy } from "node:path";
-import { parseSync as i } from "oxc-parser";
-import { defineRule as by } from "oxlint-plugin-utilities";
-function l(y, j) {
-	let Q = y.scan(j);
-	return Q === 0 ? 0 : 1 - (1 - y.probability) ** Q;
+	c = Ry;
+import { extname as fy } from "node:path";
+import { parseSync as t } from "oxc-parser";
+function s(y, T) {
+	let j = y.scan(T);
+	return j === 0 ? 0 : 1 - (1 - y.probability) ** j;
 }
 var _y = 0.9;
-function Ay(y, j) {
-	let Q = 0;
-	for (let q of y) {
-		let Z = l(q, j);
-		Q = 1 - (1 - Q) * (1 - Z);
+function Dy(y, T) {
+	let j = 0;
+	for (let Q of y) {
+		let q = s(Q, T);
+		j = 1 - (1 - j) * (1 - q);
 	}
-	return Q;
+	return j;
 }
-function Dy(y, j) {
-	return Ay(y, j) >= _y;
+function gy(y, T) {
+	return Dy(y, T) >= _y;
 }
-function c(y, j) {
-	return j.some((Q) => Dy(y, Q));
+function r(y, T) {
+	return T.some((j) => gy(y, j));
 }
-function s(y) {
+function d(y) {
 	return {
 		probability: y,
-		scan(j) {
-			for (let Q = 0; Q < j.length - 1; Q += 1) {
-				let q = j.charAt(Q),
-					Z = j.charAt(Q + 1);
-				if (q === q.toLowerCase() && Z === Z.toUpperCase() && Z !== Z.toLowerCase()) return 1;
+		scan(T) {
+			for (let j = 0; j < T.length - 1; j += 1) {
+				let Q = T.charAt(j),
+					q = T.charAt(j + 1);
+				if (Q === Q.toLowerCase() && q === q.toUpperCase() && q !== q.toLowerCase()) return 1;
 			}
 			return 0;
 		},
 	};
 }
 var Iy = /\s+/g,
-	Ny = /[-/^$*+?.()|[\]{}]/g;
-function Ly(y) {
-	return y.replaceAll(Ny, String.raw`\$&`);
+	Ly = /[-/^$*+?.()|[\]{}]/g;
+function Ay(y) {
+	return y.replaceAll(Ly, String.raw`\$&`);
 }
-function r(y, j) {
-	let Q = j.map((q) => (typeof q === "string" ? new RegExp(Ly(q), "g") : new RegExp(q.source, "g")));
+function a(y, T) {
+	let j = T.map((Q) => (typeof Q === "string" ? new RegExp(Ay(Q), "g") : new RegExp(Q.source, "g")));
 	return {
 		probability: y,
-		scan(q) {
-			let Z = q.replace(Iy, ""),
-				Y = 0;
-			for (let K of Q) {
-				K.lastIndex = 0;
-				let U = Z.match(K);
-				if (U) Y += U.length;
+		scan(Q) {
+			let q = Q.replace(Iy, ""),
+				$ = 0;
+			for (let Y of j) {
+				Y.lastIndex = 0;
+				let H = q.match(Y);
+				if (H) $ += H.length;
 			}
-			return Y;
+			return $;
 		},
 	};
 }
-var wy = /\s/;
-function d(y, j) {
-	let Q = new Set(j);
+var Sy = /\s/;
+function i(y, T) {
+	let j = new Set(T);
 	return {
 		probability: y,
-		scan(q) {
-			for (let Z = q.length - 1; Z >= 0; Z -= 1) {
-				let Y = q.charAt(Z);
-				if (Q.has(Y)) return 1;
-				if (!wy.test(Y) && Y !== "*" && Y !== "/") return 0;
+		scan(Q) {
+			for (let q = Q.length - 1; q >= 0; q -= 1) {
+				let $ = Q.charAt(q);
+				if (j.has($)) return 1;
+				if (!Sy.test($) && $ !== "*" && $ !== "/") return 0;
 			}
 			return 0;
 		},
 	};
 }
-var gy = /[ \t(),{}]/;
-function C(y, j) {
-	let Q = new Set(j);
+var Ny = /[ \t(),{}]/;
+function f(y, T) {
+	let j = new Set(T);
 	return {
 		probability: y,
-		scan(q) {
-			let Z = q.split(gy),
-				Y = 0;
-			for (let K of Z) if (Q.has(K)) Y += 1;
-			return Y;
+		scan(Q) {
+			let q = Q.split(Ny),
+				$ = 0;
+			for (let Y of q) if (j.has(Y)) $ += 1;
+			return $;
 		},
 	};
 }
-var Sy = [
+var wy = [
 		"public",
 		"abstract",
 		"class",
@@ -197,8 +200,8 @@ var Sy = [
 		"import",
 		"export",
 	],
-	Ry = ["++", "||", "&&", "===", "?.", "??"],
-	Ey = [
+	Ey = ["++", "||", "&&", "===", "?.", "??"],
+	Cy = [
 		"for(",
 		"if(",
 		"while(",
@@ -213,75 +216,75 @@ var Sy = [
 		'import "',
 		"require(",
 	],
-	Cy = ["}", ";", "{"];
-function a() {
-	return [d(0.95, Cy), C(0.7, Ry), C(0.3, Sy), r(0.95, Ey), s(0.5)];
+	hy = ["}", ";", "{"];
+function o() {
+	return [i(0.95, hy), f(0.7, Ey), f(0.3, wy), a(0.95, Cy), d(0.5)];
 }
-var fy = new Set(["BreakStatement", "ContinueStatement", "LabeledStatement"]);
-function Py(y) {
-	return fy.has(y.type);
+var by = new Set(["BreakStatement", "ContinueStatement", "LabeledStatement"]);
+function xy(y) {
+	return by.has(y.type);
 }
-var vy = a();
-function xy(y, j, Q) {
-	let q = y.loc.start.line,
-		Z = j.loc.start.line;
-	if (q + 1 !== Z) return !1;
-	let Y = { end: y.end, loc: y.loc, range: y.range, start: y.start, type: y.type, value: y.value },
-		K = Q.getTokenAfter(Y);
-	if (!K) return !0;
-	return K.loc.start.line > Z;
+var Py = o();
+function uy(y, T, j) {
+	let Q = y.loc.start.line,
+		q = T.loc.start.line;
+	if (Q + 1 !== q) return !1;
+	let $ = { end: y.end, loc: y.loc, range: y.range, start: y.start, type: y.type, value: y.value },
+		Y = j.getTokenAfter($);
+	if (!Y) return !0;
+	return Y.loc.start.line > q;
 }
-function uy(y, j) {
-	let Q = [],
-		q = 0,
-		Z = [],
-		Y = 0;
-	for (let K of y)
-		if (K.type === "Block") {
-			if (Y > 0)
-				((Q[q++] = {
-					comments: Z,
-					value: Z.map(({ value: U }) => U).join(`
+function vy(y, T) {
+	let j = [],
+		Q = 0,
+		q = [],
+		$ = 0;
+	for (let Y of y)
+		if (Y.type === "Block") {
+			if ($ > 0)
+				((j[Q++] = {
+					comments: q,
+					value: q.map(({ value: H }) => H).join(`
 `),
 				}),
-					(Z = []),
-					(Y = 0));
-			Q[q++] = { comments: [K], value: K.value };
-		} else if (Y === 0) Z[Y++] = K;
+					(q = []),
+					($ = 0));
+			j[Q++] = { comments: [Y], value: Y.value };
+		} else if ($ === 0) q[$++] = Y;
 		else {
-			let U = Z.at(-1);
-			if (U && xy(U, K, j)) Z[Y++] = K;
+			let H = q.at(-1);
+			if (H && uy(H, Y, T)) q[$++] = Y;
 			else
-				((Q[q++] = {
-					comments: Z,
-					value: Z.map(({ value: $ }) => $).join(`
+				((j[Q++] = {
+					comments: q,
+					value: q.map(({ value: Z }) => Z).join(`
 `),
 				}),
-					(Z = [K]),
-					(Y = 1));
+					(q = [Y]),
+					($ = 1));
 		}
-	if (Y > 0)
-		Q[q] = {
-			comments: Z,
-			value: Z.map(({ value: K }) => K).join(`
+	if ($ > 0)
+		j[Q] = {
+			comments: q,
+			value: q.map(({ value: Y }) => Y).join(`
 `),
 		};
-	return Q;
+	return j;
 }
 var py = /{/g,
 	my = /}/g;
 function ly(y) {
-	let j = (y.match(py) ?? []).length,
-		Q = (y.match(my) ?? []).length,
-		q = j - Q;
-	if (q > 0) return y + "}".repeat(q);
-	if (q < 0) return "{".repeat(-q) + y;
+	let T = (y.match(py) ?? []).length,
+		j = (y.match(my) ?? []).length,
+		Q = T - j;
+	if (Q > 0) return y + "}".repeat(Q);
+	if (Q < 0) return "{".repeat(-Q) + y;
 	return y;
 }
 function cy(y) {
-	let j = y.split(`
+	let T = y.split(`
 `);
-	return c(vy, j);
+	return r(Py, T);
 }
 function sy(y) {
 	if (y.type !== "ReturnStatement" && y.type !== "ThrowStatement") return !1;
@@ -298,77 +301,77 @@ function ay(y) {
 	return B(y) && typeof y.type === "string";
 }
 function iy(y) {
-	let j = [];
-	for (let Q of y) if (ay(Q)) j.push(Q);
-	return j;
+	let T = [];
+	for (let j of y) if (ay(j)) T.push(j);
+	return T;
 }
-function oy(y, j) {
+function oy(y, T) {
 	if (y.type !== "ExpressionStatement") return !1;
-	let { expression: Q } = y;
-	return Q.type === "Identifier" || Q.type === "SequenceExpression" || ry(Q) || dy(Q) || !j.trimEnd().endsWith(";");
+	let { expression: j } = y;
+	return j.type === "Identifier" || j.type === "SequenceExpression" || ry(j) || dy(j) || !T.trimEnd().endsWith(";");
 }
-function ty(y, j) {
+function ty(y, T) {
 	if (y.length !== 1) return !1;
-	let Q = y.at(0);
-	if (!Q) return !1;
-	return Py(Q) || sy(Q) || oy(Q, j);
+	let j = y.at(0);
+	if (!j) return !1;
+	return xy(j) || sy(j) || oy(j, T);
 }
 var ny = [/A 'return' statement can only be used within a function body/];
 function ey(y) {
-	for (let j of y) {
-		let Q = !1;
-		for (let q of ny)
-			if (q.test(j.message)) {
-				Q = !0;
+	for (let T of y) {
+		let j = !1;
+		for (let Q of ny)
+			if (Q.test(T.message)) {
+				j = !0;
 				break;
 			}
-		if (!Q) return !1;
+		if (!j) return !1;
 	}
 	return !0;
 }
-function o(y) {
+function n(y) {
 	return (y.errors.length === 0 || ey(y.errors)) && y.program.body.length > 0;
 }
-function yj(y, j) {
-	let Q = hy(j),
-		q = `file${Q || ".js"}`,
-		Z = i(q, y);
-	if (o(Z)) return Z;
-	if (Q !== ".tsx" && Q !== ".jsx") {
-		let Y = i("file.tsx", y);
-		if (o(Y)) return Y;
+function yT(y, T) {
+	let j = fy(T),
+		Q = `file${j || ".js"}`,
+		q = t(Q, y);
+	if (n(q)) return q;
+	if (j !== ".tsx" && j !== ".jsx") {
+		let $ = t("file.tsx", y);
+		if (n($)) return $;
 	}
 	return;
 }
-function jj(y, j) {
+function TT(y, T) {
 	if (!cy(y)) return !1;
-	let Q = yj(y, j);
-	if (!Q) return !1;
-	let q = iy(Q.program.body);
-	return !ty(q, y);
+	let j = yT(y, T);
+	if (!j) return !1;
+	let Q = iy(j.program.body);
+	return !ty(Q, y);
 }
-var Qj = by({
+var jT = M({
 		create(y) {
 			return {
 				"Program:exit"() {
-					let j = y.sourceCode.getAllComments(),
-						Q = uy(j, y.sourceCode);
-					for (let q of Q) {
-						let Z = q.value.trim();
-						if (Z === "}") continue;
-						let Y = ly(Z);
-						if (!jj(Y, y.filename)) continue;
-						let K = q.comments.at(0),
-							U = q.comments.at(-1);
-						if (!K || !U) continue;
+					let T = y.sourceCode.getAllComments(),
+						j = vy(T, y.sourceCode);
+					for (let Q of j) {
+						let q = Q.value.trim();
+						if (q === "}") continue;
+						let $ = ly(q);
+						if (!TT($, y.filename)) continue;
+						let Y = Q.comments.at(0),
+							H = Q.comments.at(-1);
+						if (!Y || !H) continue;
 						y.report({
-							loc: { end: U.loc.end, start: K.loc.start },
+							loc: { end: H.loc.end, start: Y.loc.start },
 							messageId: "commentedCode",
 							suggest: [
 								{
 									desc: "Remove this commented out code",
-									fix($) {
-										return $.removeRange([K.range[0], U.range[1]]);
+									fix(Z) {
+										return Z.removeRange([Y.range[0], H.range[1]]);
 									},
 								},
 							],
@@ -388,12 +391,11 @@ var Qj = by({
 			type: "suggestion",
 		},
 	}),
-	t = Qj;
-import { defineRule as qj } from "oxlint-plugin-utilities";
-var qy = "replace",
-	Zy = "suggestion",
-	n = "A more descriptive name will do too.",
-	Zj = {
+	e = jT;
+var Zy = "replace",
+	$y = "suggestion",
+	yy = "A more descriptive name will do too.",
+	QT = {
 		acc: { accumulator: !0 },
 		arg: { argument: !0 },
 		args: { arguments: !0 },
@@ -468,7 +470,7 @@ var qy = "replace",
 		vars: { variables: !0 },
 		ver: { version: !0 },
 	},
-	$j = {
+	qT = {
 		defaultProps: !0,
 		devDependencies: !0,
 		EmberENV: !0,
@@ -481,9 +483,9 @@ var qy = "replace",
 		propTypes: !0,
 		setupFilesAfterEnv: !0,
 	},
-	Yj = ["i18n", "l10n"],
-	Kj = /(?=[A-Z])|(?<=[_.-])/,
-	Xj = new Set([
+	ZT = ["i18n", "l10n"],
+	$T = /(?=[A-Z])|(?<=[_.-])/,
+	YT = new Set([
 		"any",
 		"as",
 		"boolean",
@@ -545,57 +547,57 @@ var qy = "replace",
 		"with",
 		"yield",
 	]),
-	Bj = /^[A-Za-z]+$/;
-function b(y) {
+	kT = /^[A-Za-z]+$/;
+function x(y) {
 	return y === y.toUpperCase();
 }
-function $y(y) {
-	return b(y.charAt(0));
+function Yy(y) {
+	return x(y.charAt(0));
 }
-function e(y) {
+function Ty(y) {
 	return y.charAt(0).toUpperCase() + y.slice(1);
 }
-function yy(y) {
+function jy(y) {
 	return y.charAt(0).toLowerCase() + y.slice(1);
 }
-function z(y) {
+function W(y) {
 	return B(y) && "name" in y && typeof y.name === "string";
 }
-function N(y) {
-	return z(y) && y.type === "Identifier";
+function L(y) {
+	return W(y) && y.type === "Identifier";
 }
-function Yy(y) {
+function ky(y) {
 	return B(y) && y.type === "JSXIdentifier" && "name" in y;
 }
-function Hj(y) {
+function BT(y) {
 	return B(y) && y.type === "ImportDeclaration";
 }
-function w(y) {
+function S(y) {
 	return B(y) && y.type === "VariableDeclarator";
 }
-function L(y) {
+function A(y) {
 	return B(y) && y.type === "Literal" && typeof y.value === "string";
 }
-function Jj(y) {
+function XT(y) {
 	return B(y) && y.type === "CallExpression";
 }
-function Ky(y) {
-	if (!Jj(y)) return !1;
+function By(y) {
+	if (!XT(y)) return !1;
 	if (y.optional) return !1;
-	let { callee: j } = y;
-	if (!N(j) || j.name !== "require" || y.arguments.length !== 1) return !1;
-	let [Q] = y.arguments;
-	return Q !== void 0 && L(Q);
+	let { callee: T } = y;
+	if (!L(T) || T.name !== "require" || y.arguments.length !== 1) return !1;
+	let [j] = y.arguments;
+	return j !== void 0 && A(j);
 }
-function h(y) {
-	if (y.length === 0 || Xj.has(y)) return !1;
-	let j = y.codePointAt(0);
-	if (j === void 0 || !Xy(j)) return !1;
-	let Q = j > 65535 ? 2 : 1;
-	while (Q < y.length) {
-		let q = y.codePointAt(Q);
-		if (q === void 0 || !Uj(q)) return !1;
-		Q += q > 65535 ? 2 : 1;
+function b(y) {
+	if (y.length === 0 || YT.has(y)) return !1;
+	let T = y.codePointAt(0);
+	if (T === void 0 || !Xy(T)) return !1;
+	let j = T > 65535 ? 2 : 1;
+	while (j < y.length) {
+		let Q = y.codePointAt(j);
+		if (Q === void 0 || !FT(Q)) return !1;
+		j += Q > 65535 ? 2 : 1;
 	}
 	return !0;
 }
@@ -619,7 +621,7 @@ function Xy(y) {
 	if (y >= 65382 && y <= 65500) return !0;
 	return !1;
 }
-function Uj(y) {
+function FT(y) {
 	if (Xy(y)) return !0;
 	if (y >= 48 && y <= 57) return !0;
 	if (y === 8204 || y === 8205) return !0;
@@ -627,400 +629,400 @@ function Uj(y) {
 	if (y >= 8240 && y <= 8266) return !0;
 	return !1;
 }
-function By(y) {
-	let j = [y];
-	for (let Q of y.childScopes) {
-		let q = By(Q);
-		for (let Z of q) j.push(Z);
+function Fy(y) {
+	let T = [y];
+	for (let j of y.childScopes) {
+		let Q = Fy(j);
+		for (let q of Q) T.push(q);
 	}
-	return j;
+	return T;
 }
-function Vj(y, j) {
-	let Q = j;
-	while (Q !== null) {
-		let q = Q.set.get(y);
-		if (q !== void 0) return q;
-		Q = Q.upper;
+function HT(y, T) {
+	let j = T;
+	while (j !== null) {
+		let Q = j.set.get(y);
+		if (Q !== void 0) return Q;
+		j = j.upper;
 	}
 	return;
 }
-function Tj(y, j) {
-	return !j.some((Q) => Vj(y, Q) !== void 0);
+function KT(y, T) {
+	return !T.some((j) => HT(y, j) !== void 0);
 }
-function Mj(y, j, Q = () => !0) {
-	let q = y;
-	if (!h(q)) {
-		if (((q = `${q}_`), !h(q))) return;
+function OT(y, T, j = () => !0) {
+	let Q = y;
+	if (!b(Q)) {
+		if (((Q = `${Q}_`), !b(Q))) return;
 	}
-	while (!Tj(q, j) || !Q(q, j)) q = `${q}_`;
-	return q;
+	while (!KT(Q, T) || !j(Q, T)) Q = `${Q}_`;
+	return Q;
 }
 function Hy(y) {
-	let j = new Set();
-	for (let Q of y.identifiers) j.add(Q);
-	for (let { identifier: Q } of y.references) j.add(Q);
-	return [...j];
+	let T = new Set();
+	for (let j of y.identifiers) T.add(j);
+	for (let { identifier: j } of y.references) T.add(j);
+	return [...T];
 }
-function Wj(y, j) {
-	return y.range[0] === j.range[0] && y.range[1] === j.range[1];
+function JT(y, T) {
+	return y.range[0] === T.range[0] && y.range[1] === T.range[1];
 }
-function Oj(y) {
-	let { parent: j } = y;
-	if (!Jy(j) || j.local !== y) return !1;
-	return Wj(j.local, j.imported);
+function VT(y) {
+	let { parent: T } = y;
+	if (!Ky(T) || T.local !== y) return !1;
+	return JT(T.local, T.imported);
 }
-function Jy(y) {
+function Ky(y) {
 	return B(y) && y.type === "ImportSpecifier";
 }
-function zj(y) {
+function UT(y) {
 	return B(y) && y.type === "ExportSpecifier";
 }
-function g(y) {
+function N(y) {
 	return B(y) && y.type === "Property";
 }
-function Gj(y) {
-	if (!z(y)) return !1;
-	let { parent: j } = y;
-	return g(j) && j.shorthand && j.value === y;
+function MT(y) {
+	if (!W(y)) return !1;
+	let { parent: T } = y;
+	return N(T) && T.shorthand && T.value === y;
 }
-function kj(y) {
-	if (!z(y)) return !1;
-	let { parent: j } = y;
-	if ((Fj(j) && j.local === y) || (_j(j) && j.local === y)) return !0;
-	if (Jy(j) && j.local === y) {
-		let { imported: Q } = j;
-		if (N(Q) && Q.name === "default") return !0;
+function WT(y) {
+	if (!W(y)) return !1;
+	let { parent: T } = y;
+	if ((GT(T) && T.local === y) || (zT(T) && T.local === y)) return !0;
+	if (Ky(T) && T.local === y) {
+		let { imported: j } = T;
+		if (L(j) && j.name === "default") return !0;
 	}
-	if (w(j) && j.id === y && Ky(j.init)) return !0;
+	if (S(T) && T.id === y && By(T.init)) return !0;
 	return !1;
 }
-function Fj(y) {
+function GT(y) {
 	return B(y) && y.type === "ImportDefaultSpecifier";
 }
-function _j(y) {
+function zT(y) {
 	return B(y) && y.type === "ImportNamespaceSpecifier";
 }
-function Aj(y) {
-	if (!z(y)) return !1;
-	let { parent: j } = y;
-	if (j === void 0 || j === null) return !1;
-	if (w(j) && j.id === y) {
+function RT(y) {
+	if (!W(y)) return !1;
+	let { parent: T } = y;
+	if (T === void 0 || T === null) return !1;
+	if (S(T) && T.id === y) {
+		let j = T.parent;
+		if (!_T(j)) return !1;
 		let Q = j.parent;
-		if (!Dj(Q)) return !1;
-		let q = Q.parent;
-		return A(q);
+		return D(Q);
 	}
-	if (Ij(j) && j.id === y) return A(j.parent);
-	if (Nj(j) && j.id === y) return A(j.parent);
-	if (Lj(j) && j.id === y) return A(j.parent);
+	if (DT(T) && T.id === y) return D(T.parent);
+	if (gT(T) && T.id === y) return D(T.parent);
+	if (IT(T) && T.id === y) return D(T.parent);
 	return !1;
 }
-function Dj(y) {
+function _T(y) {
 	return B(y) && y.type === "VariableDeclaration";
 }
-function A(y) {
+function D(y) {
 	return B(y) && y.type === "ExportNamedDeclaration";
 }
-function Ij(y) {
+function DT(y) {
 	return B(y) && typeof y.type === "string" && (y.type === "FunctionDeclaration" || y.type === "FunctionExpression");
 }
-function Nj(y) {
+function gT(y) {
 	return B(y) && typeof y.type === "string" && (y.type === "ClassDeclaration" || y.type === "ClassExpression");
 }
-function Lj(y) {
+function IT(y) {
 	return B(y) && y.type === "TSTypeAliasDeclaration";
 }
-function wj(y) {
-	return Hy(y).every((j) => !Aj(j) && !Yy(j));
+function LT(y) {
+	return Hy(y).every((T) => !RT(T) && !ky(T));
 }
-function gj(y) {
-	if (!z(y)) return !1;
-	let { parent: j } = y;
-	if (Sj(j) && j.property === y && !j.computed) {
-		let Q = j.parent;
-		if (Rj(Q) && Q.left === j) return !0;
+function AT(y) {
+	if (!W(y)) return !1;
+	let { parent: T } = y;
+	if (ST(T) && T.property === y && !T.computed) {
+		let j = T.parent;
+		if (NT(j) && j.left === T) return !0;
 	}
-	if (g(j) && j.key === y && !j.computed && !j.shorthand && Uy(j.parent)) return !0;
-	if (zj(j) && j.exported === y && j.local !== y) return !0;
-	return (Ej(j) || Cj(j)) && j.key === y && !j.computed;
+	if (N(T) && T.key === y && !T.computed && !T.shorthand && Oy(T.parent)) return !0;
+	if (UT(T) && T.exported === y && T.local !== y) return !0;
+	return (wT(T) || ET(T)) && T.key === y && !T.computed;
 }
-function Sj(y) {
+function ST(y) {
 	return B(y) && y.type === "MemberExpression";
 }
-function Rj(y) {
+function NT(y) {
 	return B(y) && y.type === "AssignmentExpression";
 }
-function Uy(y) {
+function Oy(y) {
 	return B(y) && y.type === "ObjectExpression";
 }
-function Ej(y) {
+function wT(y) {
 	return (
 		B(y) && typeof y.type === "string" && (y.type === "MethodDefinition" || y.type === "TSAbstractMethodDefinition")
 	);
 }
-function Cj(y) {
+function ET(y) {
 	return (
 		B(y) &&
 		typeof y.type === "string" &&
 		(y.type === "PropertyDefinition" || y.type === "TSAbstractPropertyDefinition")
 	);
 }
-function hj(y) {
-	if (!z(y)) return !1;
-	let { parent: j } = y;
-	return g(j) && j.key === y && !j.computed && !j.shorthand && Uy(j.parent);
+function CT(y) {
+	if (!W(y)) return !1;
+	let { parent: T } = y;
+	return N(T) && T.key === y && !T.computed && !T.shorthand && Oy(T.parent);
 }
-function bj(y) {
+function hT(y) {
 	if (y.type === "ImportBinding") {
-		let { parent: j } = y;
-		if (j !== null && Hj(j) && L(j.source)) return j.source.value;
+		let { parent: T } = y;
+		if (T !== null && BT(T) && A(T.source)) return T.source.value;
 	}
 	if (y.type === "Variable") {
-		let { node: j } = y;
-		if (w(j) && Ky(j.init)) {
-			let [Q] = j.init.arguments;
-			if (Q !== void 0 && L(Q)) return Q.value;
+		let { node: T } = y;
+		if (S(T) && By(T.init)) {
+			let [j] = T.init.arguments;
+			if (j !== void 0 && A(j)) return j.value;
 		}
 	}
 	return;
 }
-function fj(y) {
-	let j = bj(y);
-	if (j === void 0) return !1;
-	return !j.includes("node_modules") && (j.startsWith(".") || j.startsWith("/"));
+function fT(y) {
+	let T = hT(y);
+	if (T === void 0) return !1;
+	return !T.includes("node_modules") && (T.startsWith(".") || T.startsWith("/"));
 }
-function jy(y, j) {
+function Qy(y, T) {
 	if (y === !1) return !1;
-	return y === "internal" ? fj(j) : !0;
+	return y === "internal" ? fT(T) : !0;
 }
-function Pj(y) {
+function bT(y) {
 	if (y.defs.length !== 1) return !1;
 	return y.defs[0]?.type === "ClassName";
 }
-function vj() {
+function xT() {
 	return {
-		allowList: new Map(Object.entries($j)),
+		allowList: new Map(Object.entries(qT)),
 		checkDefaultAndNamespaceImports: "internal",
 		checkFilenames: !0,
 		checkProperties: !1,
 		checkShorthandImports: "internal",
 		checkShorthandProperties: !1,
 		checkVariables: !0,
-		ignore: Yj.map((y) => new RegExp(y, "u")),
-		replacements: new Map(Object.entries(Zj).map(([y, j]) => [y, new Map(Object.entries(j))])),
+		ignore: ZT.map((y) => new RegExp(y, "u")),
+		replacements: new Map(Object.entries(QT).map(([y, T]) => [y, new Map(Object.entries(T))])),
 	};
 }
-function Qy(y, j) {
-	if (b(y) || j.allowList.get(y) === !0) return [];
-	let Q = j.replacements.get(yy(y)) ?? j.replacements.get(y) ?? j.replacements.get(e(y));
-	if (!Q) return [];
-	let q = $y(y) ? e : yy,
-		Z = [...Q.keys()].filter((Y) => Q.get(Y) ?? !1).map(q);
-	return Z.length > 0 ? [...Z].toSorted() : [];
+function qy(y, T) {
+	if (x(y) || T.allowList.get(y) === !0) return [];
+	let j = T.replacements.get(jy(y)) ?? T.replacements.get(y) ?? T.replacements.get(Ty(y));
+	if (!j) return [];
+	let Q = Yy(y) ? Ty : jy,
+		q = [...j.keys()].filter(($) => j.get($) ?? !1).map(Q);
+	return q.length > 0 ? [...q].toSorted() : [];
 }
-function xj(y, j) {
-	let Q = j.replacements.get(y);
-	if (!Q) return !1;
-	for (let q of Q.values()) if (q) return !0;
+function PT(y, T) {
+	let j = T.replacements.get(y);
+	if (!j) return !1;
+	for (let Q of j.values()) if (Q) return !0;
 	return !1;
 }
-function uj(y, j = Number.POSITIVE_INFINITY) {
-	let Q = y.reduce((Y, { length: K }) => Y * K, 1),
-		q = Math.min(Q, j);
+function uT(y, T = Number.POSITIVE_INFINITY) {
+	let j = y.reduce(($, { length: Y }) => $ * Y, 1),
+		Q = Math.min(j, T);
 	return {
-		samples: Array.from({ length: q }, (Y, K) => {
-			let U = K,
-				$ = [];
-			for (let X = y.length - 1; X >= 0; X -= 1) {
-				let H = y[X] ?? [],
-					T = H.length,
-					J = U % T;
-				U = (U - J) / T;
-				let M = H[J];
-				if (M !== void 0) $.unshift(M);
+		samples: Array.from({ length: Q }, ($, Y) => {
+			let H = Y,
+				Z = [];
+			for (let k = y.length - 1; k >= 0; k -= 1) {
+				let X = y[k] ?? [],
+					O = X.length,
+					F = H % O;
+				H = (H - F) / O;
+				let J = X[F];
+				if (J !== void 0) Z.unshift(J);
 			}
-			return $;
+			return Z;
 		}),
-		total: Q,
+		total: j,
 	};
 }
-function D(y, j, Q = 3) {
-	let { allowList: q, ignore: Z } = j;
-	if (b(y) || q.get(y) === !0 || Z.some((J) => J.test(y))) return { total: 0 };
-	let Y = Qy(y, j);
-	if (Y.length > 0) return { samples: Y.slice(0, Q), total: Y.length };
-	let K = y.split(Kj).filter(Boolean),
-		U = !1,
-		$ = [],
-		X = 0;
-	for (let J of K) {
-		let M = Qy(J, j);
-		if (M.length > 0) ((U = !0), ($[X++] = M));
-		else $[X++] = [J];
+function g(y, T, j = 3) {
+	let { allowList: Q, ignore: q } = T;
+	if (x(y) || Q.get(y) === !0 || q.some((F) => F.test(y))) return { total: 0 };
+	let $ = qy(y, T);
+	if ($.length > 0) return { samples: $.slice(0, j), total: $.length };
+	let Y = y.split($T).filter(Boolean),
+		H = !1,
+		Z = [],
+		k = 0;
+	for (let F of Y) {
+		let J = qy(F, T);
+		if (J.length > 0) ((H = !0), (Z[k++] = J));
+		else Z[k++] = [F];
 	}
-	if (!U) return { total: 0 };
-	let { samples: H, total: T } = uj($, Q);
-	for (let J of H)
-		for (let M = J.length - 1; M > 0; M -= 1) {
-			let G = J[M] ?? "";
-			if (Bj.test(G) && J[M - 1]?.endsWith(G) === !0) J.splice(M, 1);
+	if (!H) return { total: 0 };
+	let { samples: X, total: O } = uT(Z, j);
+	for (let F of X)
+		for (let J = F.length - 1; J > 0; J -= 1) {
+			let G = F[J] ?? "";
+			if (kT.test(G) && F[J - 1]?.endsWith(G) === !0) F.splice(J, 1);
 		}
-	return { samples: H.map((J) => J.join("")), total: T };
+	return { samples: X.map((F) => F.join("")), total: O };
 }
-function I(y, j, Q) {
-	let { samples: q = [], total: Z } = j;
-	if (Z === 1) return { data: { discouragedName: y, nameTypeText: Q, replacement: q[0] ?? "" }, messageId: qy };
-	let Y = q.map((U) => `\`${U}\``).join(", "),
-		K = Z - q.length;
-	if (K > 0) Y += `, ... (${K > 99 ? "99+" : K} more omitted)`;
-	return { data: { discouragedName: y, nameTypeText: Q, replacementsText: Y }, messageId: Zy };
+function I(y, T, j) {
+	let { samples: Q = [], total: q } = T;
+	if (q === 1) return { data: { discouragedName: y, nameTypeText: j, replacement: Q[0] ?? "" }, messageId: Zy };
+	let $ = Q.map((H) => `\`${H}\``).join(", "),
+		Y = q - Q.length;
+	if (Y > 0) $ += `, ... (${Y > 99 ? "99+" : Y} more omitted)`;
+	return { data: { discouragedName: y, nameTypeText: j, replacementsText: $ }, messageId: $y };
 }
-var pj = qj({
+var vT = M({
 		create(y) {
-			let j = vj(),
-				Q = y.physicalFilename,
-				q = new WeakMap(),
-				Z = ($, X) =>
-					X.every((H) => {
-						return !q.get(H)?.has($);
+			let T = xT(),
+				j = y.physicalFilename,
+				Q = new WeakMap(),
+				q = (Z, k) =>
+					k.every((X) => {
+						return !Q.get(X)?.has(Z);
 					});
-			function Y($) {
-				if ($.defs.length === 0) return;
-				let [X] = $.defs;
-				if (X === void 0) return;
-				let H = X.name;
-				if (!N(H)) return;
-				if ((kj(H) && !jy(j.checkDefaultAndNamespaceImports, X)) || (Oj(H) && !jy(j.checkShorthandImports, X)))
+			function $(Z) {
+				if (Z.defs.length === 0) return;
+				let [k] = Z.defs;
+				if (k === void 0) return;
+				let X = k.name;
+				if (!L(X)) return;
+				if ((WT(X) && !Qy(T.checkDefaultAndNamespaceImports, k)) || (VT(X) && !Qy(T.checkShorthandImports, k)))
 					return;
-				if (!j.checkShorthandProperties && Gj(H)) return;
-				let T = X.type === "Variable" && w(X.node) && X.node.init === null,
-					J =
-						X.type === "Parameter" &&
-						$.scope.type === "function" &&
-						$.scope.block.type === "ArrowFunctionExpression",
-					M = T || J,
-					G = (V, O) => {
-						if (!Z(V, O)) return !1;
-						if (M && V === "arguments") return !1;
+				if (!T.checkShorthandProperties && MT(X)) return;
+				let O = k.type === "Variable" && S(k.node) && k.node.init === null,
+					F =
+						k.type === "Parameter" &&
+						Z.scope.type === "function" &&
+						Z.scope.block.type === "ArrowFunctionExpression",
+					J = O || F,
+					G = (K, U) => {
+						if (!q(K, U)) return !1;
+						if (J && K === "arguments") return !1;
 						return !0;
 					},
-					W = D($.name, j);
-				if (W.total === 0 || !W.samples) return;
-				let { references: S } = $,
-					F = [...S.map((V) => V.from), $.scope],
-					f = 0,
-					_ = W.samples
-						.map((V) => {
-							let O = Mj(V, F, G);
-							if (O === void 0) return;
-							if (O !== V && xj(V, j)) {
-								f += 1;
+					V = g(Z.name, T);
+				if (V.total === 0 || !V.samples) return;
+				let { references: w } = Z,
+					R = [...w.map((K) => K.from), Z.scope],
+					P = 0,
+					_ = V.samples
+						.map((K) => {
+							let U = OT(K, R, G);
+							if (U === void 0) return;
+							if (U !== K && PT(K, T)) {
+								P += 1;
 								return;
 							}
-							return O;
+							return U;
 						})
-						.filter((V) => typeof V === "string" && V.length > 0),
-					P = _.length > 0 ? _ : W.samples,
-					R =
-						typeof W.samples?.length === "number" && W.samples.length === W.total
-							? Math.max(0, W.total - f)
-							: W.total,
-					Ty = $.name === "fn" && R > 1 ? P.map((V) => (V === "function_" ? "function" : V)) : P,
-					v = I(H.name, { samples: Ty, total: R }, "variable");
-				if (R === 1 && _.length === 1 && wj($)) {
-					let [V] = _;
-					if (V !== void 0) {
-						for (let k of F) {
-							if (!q.has(k)) q.set(k, new Set());
-							q.get(k)?.add(V);
+						.filter((K) => typeof K === "string" && K.length > 0),
+					u = _.length > 0 ? _ : V.samples,
+					E =
+						typeof V.samples?.length === "number" && V.samples.length === V.total
+							? Math.max(0, V.total - P)
+							: V.total,
+					Vy = Z.name === "fn" && E > 1 ? u.map((K) => (K === "function_" ? "function" : K)) : u,
+					v = I(X.name, { samples: Vy, total: E }, "variable");
+				if (E === 1 && _.length === 1 && LT(Z)) {
+					let [K] = _;
+					if (K !== void 0) {
+						for (let z of R) {
+							if (!Q.has(z)) Q.set(z, new Set());
+							Q.get(z)?.add(K);
 						}
-						let O = Hy($);
+						let U = Hy(Z);
 						y.report({
 							...v,
-							fix(k) {
-								let E = [],
-									My = 0;
-								for (let Wy of O) {
-									let x = k.replaceText(Wy, V);
-									if (x === void 0) continue;
-									E[My++] = x;
+							fix(z) {
+								let C = [],
+									Uy = 0;
+								for (let My of U) {
+									let p = z.replaceText(My, K);
+									if (p === void 0) continue;
+									C[Uy++] = p;
 								}
-								return E;
+								return C;
 							},
-							node: H,
+							node: X,
 						});
 						return;
 					}
 				}
-				y.report({ ...v, node: H });
+				y.report({ ...v, node: X });
 			}
-			function K($) {
-				if (!Pj($)) {
-					Y($);
+			function Y(Z) {
+				if (!bT(Z)) {
+					$(Z);
 					return;
 				}
-				if ($.scope.type === "class") {
-					let [X] = $.defs;
-					if (X === void 0) {
-						Y($);
+				if (Z.scope.type === "class") {
+					let [k] = Z.defs;
+					if (k === void 0) {
+						$(Z);
 						return;
 					}
-					let H = X.name;
-					if (!N(H)) {
-						Y($);
+					let X = k.name;
+					if (!L(X)) {
+						$(Z);
 						return;
 					}
-					Y($);
+					$(Z);
 				}
 			}
-			function U($) {
-				for (let X of By($)) for (let H of X.variables) K(H);
+			function H(Z) {
+				for (let k of Fy(Z)) for (let X of k.variables) Y(X);
 			}
 			return {
-				Identifier($) {
-					if (!j.checkProperties || !z($) || $.name === "__proto__") return;
-					let X = D($.name, j);
-					if (X.total === 0 || !gj($)) return;
-					let H = I($.name, X, "property");
-					if (X.total === 1 && X.samples && hj($)) {
-						let [T] = X.samples,
-							{ parent: J } = $;
-						if (T !== void 0 && g(J) && L(J.value) && h(T)) {
+				Identifier(Z) {
+					if (!T.checkProperties || !W(Z) || Z.name === "__proto__") return;
+					let k = g(Z.name, T);
+					if (k.total === 0 || !AT(Z)) return;
+					let X = I(Z.name, k, "property");
+					if (k.total === 1 && k.samples && CT(Z)) {
+						let [O] = k.samples,
+							{ parent: F } = Z;
+						if (O !== void 0 && N(F) && A(F.value) && b(O)) {
 							y.report({
-								...H,
-								fix(M) {
-									return M.replaceText($, T);
+								...X,
+								fix(J) {
+									return J.replaceText(Z, O);
 								},
-								node: $,
+								node: Z,
 							});
 							return;
 						}
 					}
-					y.report({ ...H, node: $ });
+					y.report({ ...X, node: Z });
 				},
-				JSXOpeningElement($) {
-					if (!j.checkVariables || !Yy($.name) || !$y($.name.name)) return;
-					let X = D($.name.name, j);
-					if (X.total === 0) return;
-					let H = I($.name.name, X, "variable");
-					y.report({ ...H, node: $.name });
+				JSXOpeningElement(Z) {
+					if (!T.checkVariables || !ky(Z.name) || !Yy(Z.name.name)) return;
+					let k = g(Z.name.name, T);
+					if (k.total === 0) return;
+					let X = I(Z.name.name, k, "variable");
+					y.report({ ...X, node: Z.name });
 				},
-				"Program:exit"($) {
-					if (j.checkFilenames && Q !== "<input>" && Q !== "<text>") {
-						let H = Math.max(Q.lastIndexOf("/"), Q.lastIndexOf("\\")),
-							T = Q.slice(H + 1),
-							J = T.lastIndexOf("."),
-							M = J === -1 ? "" : T.slice(J),
-							G = J === -1 ? T : T.slice(0, J),
-							W = D(G, j);
-						if (W.total > 0 && W.samples) {
-							let S = W.samples.map((F) => `${F}${M}`);
-							y.report({ ...I(T, { samples: S, total: W.total }, "filename"), node: $ });
+				"Program:exit"(Z) {
+					if (T.checkFilenames && j !== "<input>" && j !== "<text>") {
+						let X = Math.max(j.lastIndexOf("/"), j.lastIndexOf("\\")),
+							O = j.slice(X + 1),
+							F = O.lastIndexOf("."),
+							J = F === -1 ? "" : O.slice(F),
+							G = F === -1 ? O : O.slice(0, F),
+							V = g(G, T);
+						if (V.total > 0 && V.samples) {
+							let w = V.samples.map((R) => `${R}${J}`);
+							y.report({ ...I(O, { samples: w, total: V.total }, "filename"), node: Z });
 						}
 					}
-					if (!j.checkVariables) return;
-					let X = y.sourceCode.getScope($);
-					U(X);
+					if (!T.checkVariables) return;
+					let k = y.sourceCode.getScope(Z);
+					H(k);
 				},
 			};
 		},
@@ -1028,16 +1030,16 @@ var pj = qj({
 			docs: { description: "Prevent abbreviations.", recommended: !1 },
 			fixable: "code",
 			messages: {
-				[qy]: `The {{nameTypeText}} \`{{discouragedName}}\` should be named \`{{replacement}}\`. ${n}`,
-				[Zy]: `Please rename the {{nameTypeText}} \`{{discouragedName}}\`. Suggested names are: {{replacementsText}}. ${n}`,
+				[Zy]: `The {{nameTypeText}} \`{{discouragedName}}\` should be named \`{{replacement}}\`. ${yy}`,
+				[$y]: `Please rename the {{nameTypeText}} \`{{discouragedName}}\`. Suggested names are: {{replacementsText}}. ${yy}`,
 			},
 			type: "suggestion",
 		},
 	}),
-	Vy = pj;
-var lj = mj({
+	Jy = vT;
+var pT = h({
 		meta: { name: "small-rules" },
-		rules: { "ban-types": m, "no-commented-code": t, "prevent-abbreviations": Vy },
+		rules: { "ban-types": c, "no-commented-code": e, "prevent-abbreviations": Jy },
 	}),
-	_Q = lj;
-export { _Q as default };
+	gj = pT;
+export { gj as default };

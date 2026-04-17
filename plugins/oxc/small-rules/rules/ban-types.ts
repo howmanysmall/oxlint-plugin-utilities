@@ -1,8 +1,7 @@
-import { defineRule } from "oxlint-plugin-utilities";
-
+import { defineRule } from "../../../../src/index";
 import { isRecord, isStringArray, isStringRecord } from "../utilities/type-utilities";
 
-import type { ESTree, Visitor } from "oxlint-plugin-utilities";
+import type { ESTree, Visitor } from "../../../../src/index";
 
 interface BanTypesOptions {
 	readonly bannedTypes?: ReadonlyArray<string> | Record<string, string>;

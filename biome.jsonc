@@ -13,7 +13,7 @@
 			}
 		},
 		"enabled": true,
-		"includes": ["**", "!bun.lock", "!package.json"]
+		"includes": ["**", "!bun.lock", "!package.json", "!plugins/oxc/small-rules.js"]
 	},
 
 	"css": {
@@ -50,7 +50,8 @@
 			"!**/node_modules/**",
 			"!**/*.ts",
 			"!.context/**",
-			"!*-lock.json"
+			"!*-lock.json",
+			"!plugins/oxc/small-rules.js"
 		],
 		"indentStyle": "tab",
 		"indentWidth": 4,

@@ -27,6 +27,10 @@
 		"noUnusedLocals": false,
 		"noUnusedParameters": false,
 		"outDir": "./plugins/oxc",
+		"paths": {
+			"#src": ["./src/index.ts"],
+			"#src/*": ["./src/*"],
+		},
 		"plugins": [],
 		"pretty": true,
 		"resolveJsonModule": true,

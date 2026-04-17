@@ -1,4 +1,10 @@
 {
+	"compilerOptions": {
+		"paths": {
+			"#src": ["./src/index.ts"],
+			"#src/*": ["./src/*"],
+		},
+	},
 	"extends": "./tsconfig.base.json",
 	"include": ["src/**/*.ts", "src/test-rule.tds"],
 }

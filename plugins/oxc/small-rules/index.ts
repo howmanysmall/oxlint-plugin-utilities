@@ -1,5 +1,4 @@
-import { definePlugin } from "oxlint-plugin-utilities";
-
+import { definePlugin } from "../../../src/index";
 import banTypes from "./rules/ban-types";
 import noCommentedCode from "./rules/no-commented-code";
 import preventAbbreviations from "./rules/prevent-abbreviations";

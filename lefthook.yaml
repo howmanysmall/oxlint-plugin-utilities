@@ -62,8 +62,6 @@ pre-commit:
       name: yaml-format
       run: bun run format {staged_files}
       stage_fixed: true
-  parallel: true
-
 pre-push:
   jobs:
     - name: build
@@ -102,4 +100,3 @@ pre-push:
         if echo {push_files} | grep -qE '\.(ts|tsx|js|jsx|json|jsonc|toml)$'; then
           bun run vitest run
         fi
-  parallel: true

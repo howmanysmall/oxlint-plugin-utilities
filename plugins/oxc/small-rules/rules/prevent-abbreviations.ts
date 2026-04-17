@@ -1,11 +1,11 @@
 // oxlint-disable typescript/no-unnecessary-condition
 // oxlint-disable max-lines-per-function
-import { defineRule } from "oxlint-plugin-utilities";
+// oxlint-disable id-length
 
+import { defineRule } from "../../../../src/index";
 import { isRecord } from "../utilities/type-utilities";
 
-// oxlint-disable id-length
-import type { Definition, ESTree, Fix, Fixer, Reference, Scope, Variable, Visitor } from "oxlint-plugin-utilities";
+import type { Definition, ESTree, Fix, Fixer, Reference, Scope, Variable, Visitor } from "../../../../src/index";
 
 type MessageIds = "replace" | "suggestion";
 type ImportCheckOption = "internal" | boolean;
