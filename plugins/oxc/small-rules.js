@@ -1,89 +1,170 @@
-import { extname as wq } from "node:path";
-import { parseSync as d } from "oxc-parser";
-import { definePlugin as PQ } from "oxlint-plugin-utilities";
-import { defineRule as Nq } from "oxlint-plugin-utilities";
-function u(q, Q) {
-	const Z = q.scan(Q);
-	return Z === 0 ? 0 : 1 - (1 - q.probability) ** Z;
+import { definePlugin as mj } from "oxlint-plugin-utilities";
+import { defineRule as Oy } from "oxlint-plugin-utilities";
+function B(y) {
+	return typeof y === "object" && y !== null && !Array.isArray(y);
 }
-const Gq = 0.9;
-function Wq(q, Q) {
-	let Z = 0;
-	for (const $ of q) {
-		const K = u($, Q);
-		Z = 1 - (1 - Z) * (1 - K);
+function u(y) {
+	if (!Array.isArray(y)) return !1;
+	for (const j of y) if (typeof j !== "string") return !1;
+	return !0;
+}
+function p(y) {
+	if (!B(y)) return !1;
+	for (const j of Object.values(y)) if (typeof j !== "string") return !1;
+	return !0;
+}
+const zy = new Map([["omit", { originalName: "Omit", replacementName: "Except" }]]);
+function Gy(y) {
+	const j = new Map(zy);
+	if (!B(y) || !("bannedTypes" in y)) return j;
+	const { bannedTypes: Q } = y;
+	if (Q === void 0) return j;
+	if (u(Q)) {
+		for (const q of Q) j.set(q.toLowerCase(), { originalName: q, replacementName: void 0 });
+		return j;
 	}
-	return Z;
+	if (p(Q)) for (const [q, Z] of Object.entries(Q)) j.set(q.toLowerCase(), { originalName: q, replacementName: Z });
+	return j;
 }
-function zq(q, Q) {
-	return Wq(q, Q) >= Gq;
+function ky(y) {
+	if (y.type === "Identifier") return y.name;
+	if (y.type === "TSQualifiedName") return y.right.name;
+	return;
 }
-function m(q, Q) {
-	return Q.some((Z) => zq(q, Z));
+const Fy = Oy({
+		create(y) {
+			let j = Gy(y.options[0]);
+			if (j.size === 0) return {};
+			return {
+				TSTypeReference(Q) {
+					let q = ky(Q.typeName);
+					if (q === void 0) return;
+					let Z = j.get(q.toLowerCase());
+					if (Z === void 0) return;
+					if (Z.replacementName !== void 0 && Z.replacementName !== "") {
+						y.report({
+							data: { replacementName: Z.replacementName, typeName: Z.originalName },
+							messageId: "bannedTypeWithReplacement",
+							node: Q.typeName,
+						});
+						return;
+					}
+					y.report({ data: { typeName: Z.originalName }, messageId: "bannedType", node: Q.typeName });
+				},
+			};
+		},
+		meta: {
+			docs: { description: "Ban configured TypeScript utility types, defaulting to Omit in favor of Except." },
+			messages: {
+				bannedType:
+					"Type '{{typeName}}' is banned by project configuration. Use the project-preferred alternative for this type.",
+				bannedTypeWithReplacement: "Type '{{typeName}}' is banned. Use '{{replacementName}}' instead.",
+			},
+			schema: [
+				{
+					additionalProperties: !1,
+					properties: {
+						bannedTypes: {
+							description:
+								"Array of banned type names or an object mapping banned type names to preferred replacement names.",
+							oneOf: [
+								{ items: { type: "string" }, type: "array" },
+								{ additionalProperties: { type: "string" }, type: "object" },
+							],
+						},
+					},
+					type: "object",
+				},
+			],
+			type: "problem",
+		},
+	}),
+	m = Fy;
+import { extname as hy } from "node:path";
+import { parseSync as index } from "oxc-parser";
+import { defineRule as by } from "oxlint-plugin-utilities";
+function l(y, j) {
+	let Q = y.scan(j);
+	return Q === 0 ? 0 : 1 - (1 - y.probability) ** Q;
 }
-function l(q) {
+var _y = 0.9;
+function Ay(y, j) {
+	let Q = 0;
+	for (let q of y) {
+		let Z = l(q, j);
+		Q = 1 - (1 - Q) * (1 - Z);
+	}
+	return Q;
+}
+function Dy(y, j) {
+	return Ay(y, j) >= _y;
+}
+function c(y, j) {
+	return j.some((Q) => Dy(y, Q));
+}
+function s(y) {
 	return {
-		probability: q,
-		scan(Q) {
-			for (let Z = 0; Z < Q.length - 1; Z += 1) {
-				const $ = Q.charAt(Z),
-					K = Q.charAt(Z + 1);
-				if ($ === $.toLowerCase() && K === K.toUpperCase() && K !== K.toLowerCase()) return 1;
+		probability: y,
+		scan(j) {
+			for (let Q = 0; Q < j.length - 1; Q += 1) {
+				let q = j.charAt(Q),
+					Z = j.charAt(Q + 1);
+				if (q === q.toLowerCase() && Z === Z.toUpperCase() && Z !== Z.toLowerCase()) return 1;
 			}
 			return 0;
 		},
 	};
 }
-const Fq = /\s+/g,
-	kq = /[-/^$*+?.()|[\]{}]/g;
-function Oq(q) {
-	return q.replaceAll(kq, String.raw`\$&`);
+var Iy = /\s+/g,
+	Ny = /[-/^$*+?.()|[\]{}]/g;
+function Ly(y) {
+	return y.replaceAll(Ny, String.raw`\$&`);
 }
-function p(q, Q) {
-	const Z = Q.map(($) => (typeof $ === "string" ? new RegExp(Oq($), "g") : new RegExp($.source, "g")));
+function r(y, j) {
+	let Q = j.map((q) => (typeof q === "string" ? new RegExp(Ly(q), "g") : new RegExp(q.source, "g")));
 	return {
-		probability: q,
-		scan($) {
-			let K = $.replace(Fq, ""),
-				X = 0;
-			for (const j of Z) {
-				j.lastIndex = 0;
-				const V = K.match(j);
-				if (V) X += V.length;
+		probability: y,
+		scan(q) {
+			let Z = q.replace(Iy, ""),
+				Y = 0;
+			for (let K of Q) {
+				K.lastIndex = 0;
+				let U = Z.match(K);
+				if (U) Y += U.length;
 			}
-			return X;
+			return Y;
 		},
 	};
 }
-const _q = /\s/;
-function c(q, Q) {
-	const Z = new Set(Q);
+var wy = /\s/;
+function d(y, j) {
+	let Q = new Set(j);
 	return {
-		probability: q,
-		scan($) {
-			for (let K = $.length - 1; K >= 0; K -= 1) {
-				const X = $.charAt(K);
-				if (Z.has(X)) return 1;
-				if (!_q.test(X) && X !== "*" && X !== "/") return 0;
+		probability: y,
+		scan(q) {
+			for (let Z = q.length - 1; Z >= 0; Z -= 1) {
+				let Y = q.charAt(Z);
+				if (Q.has(Y)) return 1;
+				if (!wy.test(Y) && Y !== "*" && Y !== "/") return 0;
 			}
 			return 0;
 		},
 	};
 }
-const Dq = /[ \t(),{}]/;
-function C(q, Q) {
-	const Z = new Set(Q);
+var gy = /[ \t(),{}]/;
+function C(y, j) {
+	let Q = new Set(j);
 	return {
-		probability: q,
-		scan($) {
-			let K = $.split(Dq),
-				X = 0;
-			for (const j of K) if (Z.has(j)) X += 1;
-			return X;
+		probability: y,
+		scan(q) {
+			let Z = q.split(gy),
+				Y = 0;
+			for (let K of Z) if (Q.has(K)) Y += 1;
+			return Y;
 		},
 	};
 }
-const Iq = [
+var Sy = [
 		"public",
 		"abstract",
 		"class",
@@ -116,8 +197,8 @@ const Iq = [
 		"import",
 		"export",
 	],
-	Aq = ["++", "||", "&&", "===", "?.", "??"],
-	Lq = [
+	Ry = ["++", "||", "&&", "===", "?.", "??"],
+	Ey = [
 		"for(",
 		"if(",
 		"while(",
@@ -132,165 +213,162 @@ const Iq = [
 		'import "',
 		"require(",
 	],
-	Tq = ["}", ";", "{"];
-function s() {
-	return [c(0.95, Tq), C(0.7, Aq), C(0.3, Iq), p(0.95, Lq), l(0.5)];
+	Cy = ["}", ";", "{"];
+function a() {
+	return [d(0.95, Cy), C(0.7, Ry), C(0.3, Sy), r(0.95, Ey), s(0.5)];
 }
-function M(q) {
-	return typeof q === "object" && q !== null && !Array.isArray(q);
+var fy = new Set(["BreakStatement", "ContinueStatement", "LabeledStatement"]);
+function Py(y) {
+	return fy.has(y.type);
 }
-const Sq = new Set(["BreakStatement", "ContinueStatement", "LabeledStatement"]);
-function yq(q) {
-	return Sq.has(q.type);
+var vy = a();
+function xy(y, j, Q) {
+	let q = y.loc.start.line,
+		Z = j.loc.start.line;
+	if (q + 1 !== Z) return !1;
+	let Y = { end: y.end, loc: y.loc, range: y.range, start: y.start, type: y.type, value: y.value },
+		K = Q.getTokenAfter(Y);
+	if (!K) return !0;
+	return K.loc.start.line > Z;
 }
-const Eq = s();
-function Rq(q) {
-	return q.loc !== void 0 && q.range !== void 0;
-}
-function hq(q, Q, Z) {
-	const $ = q.loc.start.line,
-		K = Q.loc.start.line;
-	if ($ + 1 !== K) return !1;
-	const X = { end: q.end, loc: q.loc, range: q.range, start: q.start, type: q.type, value: q.value },
-		j = Z.getTokenAfter(X);
-	if (!j) return !0;
-	return j.loc.start.line > K;
-}
-function Cq(q, Q) {
-	let Z = [],
-		$ = 0,
-		K = [],
-		X = 0;
-	for (const j of q) {
-		if (!Rq(j)) continue;
-		if (j.type === "Block") {
-			if (X > 0) {
-				((Z[$++] = {
-					comments: K,
-					value: K.map(({ value: V }) => V).join(`
+function uy(y, j) {
+	let Q = [],
+		q = 0,
+		Z = [],
+		Y = 0;
+	for (let K of y)
+		if (K.type === "Block") {
+			if (Y > 0)
+				((Q[q++] = {
+					comments: Z,
+					value: Z.map(({ value: U }) => U).join(`
 `),
 				}),
-					(K = []),
-					(X = 0));
-			}
-			Z[$++] = { comments: [j], value: j.value };
-		} else if (X === 0) K[X++] = j;
+					(Z = []),
+					(Y = 0));
+			Q[q++] = { comments: [K], value: K.value };
+		} else if (Y === 0) Z[Y++] = K;
 		else {
-			const V = K.at(-1);
-			if (V && hq(V, j, Q)) K[X++] = j;
-			else {
-				((Z[$++] = {
-					comments: K,
-					value: K.map(({ value: Y }) => Y).join(`
+			let U = Z.at(-1);
+			if (U && xy(U, K, j)) Z[Y++] = K;
+			else
+				((Q[q++] = {
+					comments: Z,
+					value: Z.map(({ value: $ }) => $).join(`
 `),
 				}),
-					(K = [j]),
-					(X = 1));
-			}
+					(Z = [K]),
+					(Y = 1));
 		}
-	}
-	if (X > 0) {
-		Z[$] = {
-			comments: K,
-			value: K.map(({ value: j }) => j).join(`
+	if (Y > 0)
+		Q[q] = {
+			comments: Z,
+			value: Z.map(({ value: K }) => K).join(`
 `),
 		};
-	}
-	return Z;
-}
-const gq = /{/g,
-	Pq = /}/g;
-function vq(q) {
-	const Q = (q.match(gq) ?? []).length,
-		Z = (q.match(Pq) ?? []).length,
-		$ = Q - Z;
-	if ($ > 0) return q + "}".repeat($);
-	if ($ < 0) return "{".repeat(-$) + q;
-	return q;
-}
-function xq(q) {
-	const Q = q.split(`
-`);
-	return m(Eq, Q);
-}
-function bq(q) {
-	if (q.type !== "ReturnStatement" && q.type !== "ThrowStatement") return !1;
-	return q.argument?.type === "Identifier";
-}
-function fq(q) {
-	return q.type === "UnaryExpression" && (q.operator === "-" || q.operator === "+");
-}
-function uq(q) {
-	if (q.type !== "Literal") return !1;
-	return typeof q.value === "string" || typeof q.value === "number";
-}
-function mq(q) {
-	return M(q) && typeof q.type === "string";
-}
-function lq(q) {
-	const Q = [];
-	for (const Z of q) if (mq(Z)) Q.push(Z);
 	return Q;
 }
-function pq(q, Q) {
-	if (q.type !== "ExpressionStatement") return !1;
-	const { expression: Z } = q;
-	if (Z === null) return !1;
-	return Z.type === "Identifier" || Z.type === "SequenceExpression" || fq(Z) || uq(Z) || !Q.trimEnd().endsWith(";");
+var py = /{/g,
+	my = /}/g;
+function ly(y) {
+	let j = (y.match(py) ?? []).length,
+		Q = (y.match(my) ?? []).length,
+		q = j - Q;
+	if (q > 0) return y + "}".repeat(q);
+	if (q < 0) return "{".repeat(-q) + y;
+	return y;
 }
-function cq(q, Q) {
-	if (q.length !== 1) return !1;
-	const Z = q.at(0);
-	if (!Z) return !1;
-	return yq(Z) || bq(Z) || pq(Z, Q);
+function cy(y) {
+	let j = y.split(`
+`);
+	return c(vy, j);
 }
-const sq = [/A 'return' statement can only be used within a function body/];
-function dq(q) {
-	return q.every((Q) => sq.some((Z) => Z.test(Q.message)));
+function sy(y) {
+	if (y.type !== "ReturnStatement" && y.type !== "ThrowStatement") return !1;
+	return y.argument?.type === "Identifier";
 }
-function r(q) {
-	return (q.errors.length === 0 || dq(q.errors)) && q.program.body.length > 0;
+function ry(y) {
+	return y.type === "UnaryExpression" && (y.operator === "-" || y.operator === "+");
 }
-function rq(q, Q) {
-	const Z = wq(Q),
-		$ = `file${Z || ".js"}`,
-		K = d($, q);
-	if (r(K)) return K;
-	if (Z !== ".tsx" && Z !== ".jsx") {
-		const X = d("file.tsx", q);
-		if (r(X)) return X;
+function dy(y) {
+	if (y.type !== "Literal") return !1;
+	return typeof y.value === "string" || typeof y.value === "number";
+}
+function ay(y) {
+	return B(y) && typeof y.type === "string";
+}
+function iy(y) {
+	let j = [];
+	for (let Q of y) if (ay(Q)) j.push(Q);
+	return j;
+}
+function oy(y, j) {
+	if (y.type !== "ExpressionStatement") return !1;
+	let { expression: Q } = y;
+	return Q.type === "Identifier" || Q.type === "SequenceExpression" || ry(Q) || dy(Q) || !j.trimEnd().endsWith(";");
+}
+function ty(y, j) {
+	if (y.length !== 1) return !1;
+	let Q = y.at(0);
+	if (!Q) return !1;
+	return Py(Q) || sy(Q) || oy(Q, j);
+}
+var ny = [/A 'return' statement can only be used within a function body/];
+function ey(y) {
+	for (let j of y) {
+		let Q = !1;
+		for (let q of ny)
+			if (q.test(j.message)) {
+				Q = !0;
+				break;
+			}
+		if (!Q) return !1;
+	}
+	return !0;
+}
+function o(y) {
+	return (y.errors.length === 0 || ey(y.errors)) && y.program.body.length > 0;
+}
+function yj(y, j) {
+	let Q = hy(j),
+		q = `file${Q ?? ".js"}`,
+		Z = index(q, y);
+	if (o(Z)) return Z;
+	if (Q !== ".tsx" && Q !== ".jsx") {
+		let Y = index("file.tsx", y);
+		if (o(Y)) return Y;
 	}
 	return;
 }
-function aq(q, Q) {
-	if (!xq(q)) return !1;
-	const Z = rq(q, Q);
-	if (!Z) return !1;
-	const $ = lq(Z.program.body);
-	return !cq($, q);
+function jj(y, index) {
+	if (!cy(y)) return !1;
+	let Q = yj(y, index);
+	if (!Q) return !1;
+	const q = iy(Q.program.body);
+	return !ty(q, y);
 }
-const oq = Nq({
-		create(q) {
+const Qj = by({
+		create(y) {
 			return {
 				"Program:exit"() {
-					let Q = q.sourceCode.getAllComments(),
-						Z = Cq(Q, q.sourceCode);
-					for (let $ of Z) {
-						let K = $.value.trim();
-						if (K === "}") continue;
-						let X = vq(K);
-						if (!aq(X, q.filename)) continue;
-						let j = $.comments.at(0),
-							V = $.comments.at(-1);
-						if (!j || !V) continue;
-						q.report({
-							loc: { end: V.loc.end, start: j.loc.start },
+					let j = y.sourceCode.getAllComments(),
+						Q = uy(j, y.sourceCode);
+					for (let q of Q) {
+						let Z = q.value.trim();
+						if (Z === "}") continue;
+						let Y = ly(Z);
+						if (!jj(Y, y.filename)) continue;
+						let K = q.comments.at(0),
+							U = q.comments.at(-1);
+						if (!K || !U) continue;
+						y.report({
+							loc: { end: U.loc.end, start: K.loc.start },
 							messageId: "commentedCode",
 							suggest: [
 								{
 									desc: "Remove this commented out code",
-									fix(Y) {
-										return Y.removeRange([j.range[0], V.range[1]]);
+									fix($) {
+										return $.removeRange([K.range[0], U.range[1]]);
 									},
 								},
 							],
@@ -310,12 +388,12 @@ const oq = Nq({
 			type: "suggestion",
 		},
 	}),
-	a = oq;
-import { defineRule as iq } from "oxlint-plugin-utilities";
-const qq = "replace",
-	Qq = "suggestion",
-	o = "A more descriptive name will do too.",
-	tq = {
+	t = Qj;
+import { defineRule as qj } from "oxlint-plugin-utilities";
+const qy = "replace",
+	Zy = "suggestion",
+	n = "A more descriptive name will do too.",
+	Zj = {
 		acc: { accumulator: !0 },
 		arg: { argument: !0 },
 		args: { arguments: !0 },
@@ -390,7 +468,7 @@ const qq = "replace",
 		vars: { variables: !0 },
 		ver: { version: !0 },
 	},
-	nq = {
+	$j = {
 		defaultProps: !0,
 		devDependencies: !0,
 		EmberENV: !0,
@@ -403,9 +481,9 @@ const qq = "replace",
 		propTypes: !0,
 		setupFilesAfterEnv: !0,
 	},
-	eq = ["i18n", "l10n"],
-	qQ = /(?=[A-Z])|(?<=[_.-])/,
-	QQ = new Set([
+	Yj = ["i18n", "l10n"],
+	Kj = /(?=[A-Z])|(?<=[_.-])/,
+	Xj = new Set([
 		"any",
 		"as",
 		"boolean",
@@ -467,482 +545,482 @@ const qq = "replace",
 		"with",
 		"yield",
 	]),
-	ZQ = /^[A-Za-z]+$/;
-function P(q) {
-	return q === q.toUpperCase();
+	Bj = /^[A-Za-z]+$/;
+function b(y) {
+	return y === y.toUpperCase();
 }
-function Zq(q) {
-	return P(q.charAt(0));
+function $y(y) {
+	return b(y.charAt(0));
 }
-function index(q) {
-	return q.charAt(0).toUpperCase() + q.slice(1);
+function e(y) {
+	return y.charAt(0).toUpperCase() + y.slice(1);
 }
-function t(q) {
-	return q.charAt(0).toLowerCase() + q.slice(1);
+function yy(y) {
+	return y.charAt(0).toLowerCase() + y.slice(1);
 }
-function k(q) {
-	return M(q) && "name" in q && typeof q.name === "string";
+function z(y) {
+	return B(y) && "name" in y && typeof y.name === "string";
 }
-function w(q) {
-	return k(q) && q.type === "Identifier";
+function N(y) {
+	return z(y) && y.type === "Identifier";
 }
-function $q(q) {
-	return M(q) && q.type === "JSXIdentifier" && "name" in q;
+function Yy(y) {
+	return B(y) && y.type === "JSXIdentifier" && "name" in y;
 }
-function $Q(q) {
-	return M(q) && q.type === "ImportDeclaration";
+function Hj(y) {
+	return B(y) && y.type === "ImportDeclaration";
 }
-function S(q) {
-	return M(q) && q.type === "VariableDeclarator";
+function w(y) {
+	return B(y) && y.type === "VariableDeclarator";
 }
-function N(q) {
-	return M(q) && q.type === "Literal" && typeof q.value === "string";
+function L(y) {
+	return B(y) && y.type === "Literal" && typeof y.value === "string";
 }
-function YQ(q) {
-	return M(q) && q.type === "CallExpression";
+function Jj(y) {
+	return B(y) && y.type === "CallExpression";
 }
-function Yq(q) {
-	if (!YQ(q)) return !1;
-	if (q.optional) return !1;
-	let { callee: Q } = q;
-	if (!w(Q) || Q.name !== "require" || q.arguments.length !== 1) return !1;
-	let [Z] = q.arguments;
-	return Z !== void 0 && N(Z);
+function Ky(y) {
+	if (!Jj(y)) return !1;
+	if (y.optional) return !1;
+	const { callee: j } = y;
+	if (!N(j) || j.name !== "require" || y.arguments.length !== 1) return !1;
+	const [Q] = y.arguments;
+	return Q !== void 0 && L(Q);
 }
-function g(q) {
-	if (q.length === 0 || QQ.has(q)) return !1;
-	let Q = q.codePointAt(0);
-	if (Q === void 0 || !Kq(Q)) return !1;
-	let Z = Q > 65535 ? 2 : 1;
-	while (Z < q.length) {
-		let $ = q.codePointAt(Z);
-		if ($ === void 0 || !KQ($)) return !1;
-		Z += $ > 65535 ? 2 : 1;
+function h(y) {
+	if (y.length === 0 || Xj.has(y)) return !1;
+	const j = y.codePointAt(0);
+	if (j === void 0 || !Xy(j)) return !1;
+	let Q = j > 65535 ? 2 : 1;
+	while (Q < y.length) {
+		const q = y.codePointAt(Q);
+		if (q === void 0 || !Uj(q)) return !1;
+		Q += q > 65535 ? 2 : 1;
 	}
 	return !0;
 }
-function Kq(q) {
-	if ((q >= 65 && q <= 90) || (q >= 97 && q <= 122)) return !0;
-	if (q === 36 || q === 95) return !0;
-	if (q >= 192 && q <= 214) return !0;
-	if (q >= 216 && q <= 246) return !0;
-	if (q >= 248 && q <= 767) return !0;
-	if (q >= 880 && q <= 893) return !0;
-	if (q >= 895 && q <= 8191) return !0;
-	if (q >= 8204 && q <= 8205) return !0;
-	if (q >= 8304 && q <= 8591) return !0;
-	if (q >= 11264 && q <= 12271) return !0;
-	if (q >= 12289 && q <= 55295) return !0;
-	if (q >= 63744 && q <= 64255) return !0;
-	if (q >= 64512 && q <= 65023) return !0;
-	if (q >= 65136 && q <= 65279) return !0;
-	if (q >= 65313 && q <= 65338) return !0;
-	if (q >= 65345 && q <= 65370) return !0;
-	if (q >= 65382 && q <= 65500) return !0;
+function Xy(y) {
+	if ((y >= 65 && y <= 90) || (y >= 97 && y <= 122)) return !0;
+	if (y === 36 || y === 95) return !0;
+	if (y >= 192 && y <= 214) return !0;
+	if (y >= 216 && y <= 246) return !0;
+	if (y >= 248 && y <= 767) return !0;
+	if (y >= 880 && y <= 893) return !0;
+	if (y >= 895 && y <= 8191) return !0;
+	if (y >= 8204 && y <= 8205) return !0;
+	if (y >= 8304 && y <= 8591) return !0;
+	if (y >= 11264 && y <= 12271) return !0;
+	if (y >= 12289 && y <= 55295) return !0;
+	if (y >= 63744 && y <= 64255) return !0;
+	if (y >= 64512 && y <= 65023) return !0;
+	if (y >= 65136 && y <= 65279) return !0;
+	if (y >= 65313 && y <= 65338) return !0;
+	if (y >= 65345 && y <= 65370) return !0;
+	if (y >= 65382 && y <= 65500) return !0;
 	return !1;
 }
-function KQ(q) {
-	if (Kq(q)) return !0;
-	if (q >= 48 && q <= 57) return !0;
-	if (q === 8204 || q === 8205) return !0;
-	if (q >= 768 && q <= 865) return !0;
-	if (q >= 8240 && q <= 8266) return !0;
+function Uj(y) {
+	if (Xy(y)) return !0;
+	if (y >= 48 && y <= 57) return !0;
+	if (y === 8204 || y === 8205) return !0;
+	if (y >= 768 && y <= 865) return !0;
+	if (y >= 8240 && y <= 8266) return !0;
 	return !1;
 }
-function Xq(q) {
-	let Q = [q];
-	for (let Z of q.childScopes) {
-		let $ = Xq(Z);
-		for (let K of $) Q.push(K);
+function By(y) {
+	const j = [y];
+	for (const Q of y.childScopes) {
+		const q = By(Q);
+		for (const Z of q) j.push(Z);
 	}
-	return Q;
+	return j;
 }
-function XQ(q, Q) {
-	let Z = Q;
-	while (Z !== null) {
-		let $ = Z.set.get(q);
-		if ($ !== void 0) return $;
-		Z = Z.upper;
+function Vj(y, index) {
+	let Q = index;
+	while (Q !== null) {
+		const q = Q.set.get(y);
+		if (q !== void 0) return q;
+		Q = Q.upper;
 	}
 	return;
 }
-function jQ(q, Q) {
-	return !Q.some((Z) => XQ(q, Z) !== void 0);
+function Tj(y, index) {
+	return !index.some((Q) => Vj(y, Q) !== void 0);
 }
-function HQ(q, Q, Z = () => !0) {
-	let $ = q;
-	if (!g($)) {
-		if ((($ = `${$}_`), !g($))) return;
+function Mj(y, index, Q = () => !0) {
+	let q = y;
+	if (!h(q)) {
+		if (((q = `${q}_`), !h(q))) return;
 	}
-	while (!jQ($, Q) || !Z($, Q)) $ = `${$}_`;
-	return $;
+	while (!Tj(q, index) || !Q(q, index)) q = `${q}_`;
+	return q;
 }
-function jq(q) {
-	let Q = new Set();
-	for (let Z of q.identifiers) Q.add(Z);
-	for (let { identifier: Z } of q.references) Q.add(Z);
-	return [...Q];
+function Hy(y) {
+	const j = new Set();
+	for (const Q of y.identifiers) j.add(Q);
+	for (const { identifier: Q } of y.references) j.add(Q);
+	return [...j];
 }
-function JQ(q, Q) {
-	return q.range[0] === Q.range[0] && q.range[1] === Q.range[1];
+function Wj(y, index) {
+	return y.range[0] === index.range[0] && y.range[1] === index.range[1];
 }
-function UQ(q) {
-	let { parent: Q } = q;
-	if (!Hq(Q) || Q.local !== q) return !1;
-	return JQ(Q.local, Q.imported);
+function Oj(y) {
+	const { parent: j } = y;
+	if (!Jy(j) || j.local !== y) return !1;
+	return Wj(j.local, j.imported);
 }
-function Hq(q) {
-	return M(q) && q.type === "ImportSpecifier";
+function Jy(y) {
+	return B(y) && y.type === "ImportSpecifier";
 }
-function MQ(q) {
-	return M(q) && q.type === "ExportSpecifier";
+function zj(y) {
+	return B(y) && y.type === "ExportSpecifier";
 }
-function y(q) {
-	return M(q) && q.type === "Property";
+function g(y) {
+	return B(y) && y.type === "Property";
 }
-function VQ(q) {
-	if (!k(q)) return !1;
-	let { parent: Q } = q;
-	return y(Q) && Q.shorthand && Q.value === q;
+function Gj(y) {
+	if (!z(y)) return !1;
+	const { parent: j } = y;
+	return g(j) && j.shorthand && j.value === y;
 }
-function BQ(q) {
-	if (!k(q)) return !1;
-	let { parent: Q } = q;
-	if ((GQ(Q) && Q.local === q) || (WQ(Q) && Q.local === q)) return !0;
-	if (Hq(Q) && Q.local === q) {
-		let { imported: Z } = Q;
-		if (w(Z) && Z.name === "default") return !0;
+function kj(y) {
+	if (!z(y)) return !1;
+	const { parent: j } = y;
+	if ((Fj(j) && j.local === y) || (_index(j) && j.local === y)) return !0;
+	if (Jy(j) && j.local === y) {
+		let { imported: Q } = j;
+		if (N(Q) && Q.name === "default") return !0;
 	}
-	if (S(Q) && Q.id === q && Yq(Q.init)) return !0;
+	if (w(j) && j.id === y && Ky(j.init)) return !0;
 	return !1;
 }
-function GQ(q) {
-	return M(q) && q.type === "ImportDefaultSpecifier";
+function Fj(y) {
+	return B(y) && y.type === "ImportDefaultSpecifier";
 }
-function WQ(q) {
-	return M(q) && q.type === "ImportNamespaceSpecifier";
+function _index(y) {
+	return B(y) && y.type === "ImportNamespaceSpecifier";
 }
-function zQ(q) {
-	if (!k(q)) return !1;
-	let { parent: Q } = q;
-	if (Q === void 0 || Q === null) return !1;
-	if (S(Q) && Q.id === q) {
-		let Z = Q.parent;
-		if (!FQ(Z)) return !1;
-		let $ = Z.parent;
-		return A($);
+function Aj(y) {
+	if (!z(y)) return !1;
+	const { parent: j } = y;
+	if (j === void 0 || j === null) return !1;
+	if (w(j) && j.id === y) {
+		const Q = j.parent;
+		if (!Dj(Q)) return !1;
+		const q = Q.parent;
+		return A(q);
 	}
-	if (kQ(Q) && Q.id === q) return A(Q.parent);
-	if (OQ(Q) && Q.id === q) return A(Q.parent);
-	if (_Q(Q) && Q.id === q) return A(Q.parent);
+	if (Ij(j) && j.id === y) return A(j.parent);
+	if (Nj(j) && j.id === y) return A(j.parent);
+	if (Lj(j) && j.id === y) return A(j.parent);
 	return !1;
 }
-function FQ(q) {
-	return M(q) && q.type === "VariableDeclaration";
+function Dj(y) {
+	return B(y) && y.type === "VariableDeclaration";
 }
-function A(q) {
-	return M(q) && q.type === "ExportNamedDeclaration";
+function A(y) {
+	return B(y) && y.type === "ExportNamedDeclaration";
 }
-function kQ(q) {
-	return M(q) && typeof q.type === "string" && (q.type === "FunctionDeclaration" || q.type === "FunctionExpression");
+function Ij(y) {
+	return B(y) && typeof y.type === "string" && (y.type === "FunctionDeclaration" || y.type === "FunctionExpression");
 }
-function OQ(q) {
-	return M(q) && typeof q.type === "string" && (q.type === "ClassDeclaration" || q.type === "ClassExpression");
+function Nj(y) {
+	return B(y) && typeof y.type === "string" && (y.type === "ClassDeclaration" || y.type === "ClassExpression");
 }
-function _Q(q) {
-	return M(q) && q.type === "TSTypeAliasDeclaration";
+function Lj(y) {
+	return B(y) && y.type === "TSTypeAliasDeclaration";
 }
-function DQ(q) {
-	return jq(q).every((Q) => !zQ(Q) && !$q(Q));
+function wj(y) {
+	return Hy(y).every((index) => !Aj(index) && !Yy(index));
 }
-function IQ(q) {
-	if (!k(q)) return !1;
-	let { parent: Q } = q;
-	if (AQ(Q) && Q.property === q && !Q.computed) {
-		let Z = Q.parent;
-		if (LQ(Z) && Z.left === Q) return !0;
+function gj(y) {
+	if (!z(y)) return !1;
+	const { parent: j } = y;
+	if (Sj(j) && j.property === y && !j.computed) {
+		const Q = j.parent;
+		if (Rj(Q) && Q.left === j) return !0;
 	}
-	if (y(Q) && Q.key === q && !Q.computed && !Q.shorthand && Jq(Q.parent)) return !0;
-	if (MQ(Q) && Q.exported === q && Q.local !== q) return !0;
-	return (TQ(Q) || wQ(Q)) && Q.key === q && !Q.computed;
+	if (g(j) && j.key === y && !j.computed && !j.shorthand && Uy(j.parent)) return !0;
+	if (zj(j) && j.exported === y && j.local !== y) return !0;
+	return (Ej(j) || Cj(j)) && j.key === y && !j.computed;
 }
-function AQ(q) {
-	return M(q) && q.type === "MemberExpression";
+function Sj(y) {
+	return B(y) && y.type === "MemberExpression";
 }
-function LQ(q) {
-	return M(q) && q.type === "AssignmentExpression";
+function Rj(y) {
+	return B(y) && y.type === "AssignmentExpression";
 }
-function Jq(q) {
-	return M(q) && q.type === "ObjectExpression";
+function Uy(y) {
+	return B(y) && y.type === "ObjectExpression";
 }
-function TQ(q) {
+function Ej(y) {
 	return (
-		M(q) && typeof q.type === "string" && (q.type === "MethodDefinition" || q.type === "TSAbstractMethodDefinition")
+		B(y) && typeof y.type === "string" && (y.type === "MethodDefinition" || y.type === "TSAbstractMethodDefinition")
 	);
 }
-function wQ(q) {
+function Cj(y) {
 	return (
-		M(q) &&
-		typeof q.type === "string" &&
-		(q.type === "PropertyDefinition" || q.type === "TSAbstractPropertyDefinition")
+		B(y) &&
+		typeof y.type === "string" &&
+		(y.type === "PropertyDefinition" || y.type === "TSAbstractPropertyDefinition")
 	);
 }
-function NQ(q) {
-	if (!k(q)) return !1;
-	let { parent: Q } = q;
-	return y(Q) && Q.key === q && !Q.computed && !Q.shorthand && Jq(Q.parent);
+function hj(y) {
+	if (!z(y)) return !1;
+	const { parent: j } = y;
+	return g(j) && j.key === y && !j.computed && !j.shorthand && Uy(j.parent);
 }
-function SQ(q) {
-	if (q.type === "ImportBinding") {
-		let { parent: Q } = q;
-		if (Q !== null && $Q(Q) && N(Q.source)) return Q.source.value;
+function bj(y) {
+	if (y.type === "ImportBinding") {
+		const { parent: j } = y;
+		if (j !== null && Hj(j) && L(j.source)) return j.source.value;
 	}
-	if (q.type === "Variable") {
-		let { node: Q } = q;
-		if (S(Q) && Yq(Q.init)) {
-			let [Z] = Q.init.arguments;
-			if (Z !== void 0 && N(Z)) return Z.value;
+	if (y.type === "Variable") {
+		const { node: j } = y;
+		if (w(j) && Ky(j.init)) {
+			const [Q] = j.init.arguments;
+			if (Q !== void 0 && L(Q)) return Q.value;
 		}
 	}
 	return;
 }
-function yQ(q) {
-	let Q = SQ(q);
-	if (Q === void 0) return !1;
-	return !Q.includes("node_modules") && (Q.startsWith(".") ?? Q.startsWith("/"));
+function fj(y) {
+	const j = bj(y);
+	if (j === void 0) return !1;
+	return !j.includes("node_modules") && (j.startsWith(".") ?? j.startsWith("/"));
 }
-function n(q, Q) {
-	if (q === !1) return !1;
-	return q === "internal" ? yQ(Q) : !0;
+function jy(y, index) {
+	if (y === !1) return !1;
+	return y === "internal" ? fj(index) : !0;
 }
-function EQ(q) {
-	if (q.defs.length !== 1) return !1;
-	return q.defs[0]?.type === "ClassName";
+function Pj(y) {
+	if (y.defs.length !== 1) return !1;
+	return y.defs[0]?.type === "ClassName";
 }
-function RQ() {
+function vj() {
 	return {
-		allowList: new Map(Object.entries(nq)),
+		allowList: new Map(Object.entries($j)),
 		checkDefaultAndNamespaceImports: "internal",
 		checkFilenames: !0,
 		checkProperties: !1,
 		checkShorthandImports: "internal",
 		checkShorthandProperties: !1,
 		checkVariables: !0,
-		ignore: eq.map((q) => new RegExp(q, "u")),
-		replacements: new Map(Object.entries(tq).map(([q, Q]) => [q, new Map(Object.entries(Q))])),
+		ignore: Yj.map((y) => new RegExp(y, "u")),
+		replacements: new Map(Object.entries(Zj).map(([y, index]) => [y, new Map(Object.entries(index))])),
 	};
 }
-function e(q, Q) {
-	if (P(q) || Q.allowList.get(q) === !0) return [];
-	let Z = Q.replacements.get(t(q)) ?? Q.replacements.get(q) ?? Q.replacements.get(index(q));
-	if (!Z) return [];
-	let $ = Zq(q) ? index : t,
-		K = [...Z.keys()].filter((X) => Z.get(X) ?? !1).map($);
-	return K.length > 0 ? [...K].toSorted() : [];
+function Qy(y, index) {
+	if (b(y) || index.allowList.get(y) === !0) return [];
+	let Q = index.replacements.get(yy(y)) ?? index.replacements.get(y) ?? index.replacements.get(e(y));
+	if (!Q) return [];
+	const q = $y(y) ? e : yy,
+		Z = [...Q.keys()].filter((Y) => Q.get(Y) ?? !1).map(q);
+	return Z.length > 0 ? [...Z].toSorted() : [];
 }
-function hQ(q, Q) {
-	const Z = Q.replacements.get(q);
-	if (!Z) return !1;
-	for (const $ of Z.values()) if ($) return !0;
+function xj(y, index) {
+	let Q = index.replacements.get(y);
+	if (!Q) return !1;
+	for (const q of Q.values()) if (q) return !0;
 	return !1;
 }
-function CQ(q, Q = Number.POSITIVE_INFINITY) {
-	const Z = q.reduce((X, { length: j }) => X * j, 1),
-		$ = Math.min(Z, Q);
+function uj(y, index = Number.POSITIVE_INFINITY) {
+	let Q = y.reduce((Y, { length: K }) => Y * K, 1),
+		q = Math.min(Q, index);
 	return {
-		samples: Array.from({ length: $ }, (X, index) => {
-			let V = index,
-				Y = [];
-			for (let H = q.length - 1; H >= 0; H -= 1) {
-				const J = q[H] ?? [],
-					G = J.length,
-					U = V % G;
-				V = (V - U) / G;
-				const W = J[U];
-				if (W !== void 0) Y.unshift(W);
+		samples: Array.from({ length: q }, (Y, K) => {
+			const U = K,
+				$ = [];
+			for (let X = y.length - 1; X >= 0; X -= 1) {
+				const H = y[X] ?? [],
+					T = H.length,
+					J = U % T;
+				U = (U - J) / T;
+				const M = H[J];
+				if (M !== void 0) $.unshift(M);
 			}
-			return Y;
+			return $;
 		}),
-		total: Z,
+		total: Q,
 	};
 }
-function L(q, Q, Z = 3) {
-	const { allowList: $, ignore: K } = Q;
-	if (P(q) || $.get(q) === !0 || K.some((U) => U.test(q))) return { total: 0 };
-	const X = e(q, Q);
-	if (X.length > 0) return { samples: X.slice(0, Z), total: X.length };
-	let index = q.split(qQ).filter(Boolean),
-		V = !1,
-		Y = [],
-		H = 0;
-	for (let U of index) {
-		const W = e(U, Q);
-		if (W.length > 0) ((V = !0), (Y[H++] = W));
-		else Y[H++] = [U];
+function D(y, index, Q = 3) {
+	let { allowList: q, ignore: Z } = index;
+	if (b(y) || q.get(y) === !0 || Z.some((J) => J.test(y))) return { total: 0 };
+	let Y = Qy(y, index);
+	if (Y.length > 0) return { samples: Y.slice(0, Q), total: Y.length };
+	let K = y.split(Kj).filter(Boolean),
+		U = !1,
+		$ = [],
+		X = 0;
+	for (let J of K) {
+		let M = Qy(J, index);
+		if (M.length > 0) ((U = !0), ($[X++] = M));
+		else $[X++] = [J];
 	}
-	if (!V) return { total: 0 };
-	const { samples: J, total: G } = CQ(Y, Z);
-	for (const U of J)
-		for (let W = U.length - 1; W > 0; W -= 1) {
-			const O = U[W] ?? "";
-			if (ZQ.test(O) && U[W - 1]?.endsWith(O) === !0) U.splice(W, 1);
+	if (!U) return { total: 0 };
+	const { samples: H, total: T } = uj($, Q);
+	for (const J of H)
+		for (let M = J.length - 1; M > 0; M -= 1) {
+			const G = J[M] ?? "";
+			if (Bj.test(G) && J[M - 1]?.endsWith(G) === !0) J.splice(M, 1);
 		}
-	return { samples: J.map((U) => U.join("")), total: G };
+	return { samples: H.map((J) => J.join("")), total: T };
 }
-function T(q, Q, Z) {
-	const { samples: $ = [], total: K } = Q;
-	if (K === 1) return { data: { discouragedName: q, nameTypeText: Z, replacement: $[0] ?? "" }, messageId: qq };
-	const X = $.map((V) => `\`${V}\``).join(", "),
-		j = K - $.length;
-	if (j > 0) X += `, ... (${j > 99 ? "99+" : j} more omitted)`;
-	return { data: { discouragedName: q, nameTypeText: Z, replacementsText: X }, messageId: Qq };
+function I(y, index, Q) {
+	let { samples: q = [], total: Z } = index;
+	if (Z === 1) return { data: { discouragedName: y, nameTypeText: Q, replacement: q[0] ?? "" }, messageId: qy };
+	const Y = q.map((U) => `\`${U}\``).join(", "),
+		K = Z - q.length;
+	if (K > 0) Y += `, ... (${K > 99 ? "99+" : K} more omitted)`;
+	return { data: { discouragedName: y, nameTypeText: Q, replacementsText: Y }, messageId: Zy };
 }
-const gQ = iq({
-		create(q) {
-			let Q = RQ(),
-				Z = q.physicalFilename,
-				$ = new WeakMap(),
-				K = (Y, H) =>
-					H.every((J) => {
-						return !$.get(J)?.has(Y);
+const pj = qj({
+		create(y) {
+			let j = vj(),
+				Q = y.physicalFilename,
+				q = new WeakMap(),
+				Z = ($, X) =>
+					X.every((H) => {
+						return !q.get(H)?.has($);
 					});
-			function X(Y) {
-				if (Y.defs.length === 0) return;
-				let [H] = Y.defs;
-				if (H === void 0) return;
-				let J = H.name;
-				if (!w(J)) return;
-				if ((BQ(J) && !n(Q.checkDefaultAndNamespaceImports, H)) || (UQ(J) && !n(Q.checkShorthandImports, H)))
+			function Y($) {
+				if ($.defs.length === 0) return;
+				let [X] = $.defs;
+				if (X === void 0) return;
+				let H = X.name;
+				if (!N(H)) return;
+				if ((kj(H) && !jy(j.checkDefaultAndNamespaceImports, X)) || (Oj(H) && !jy(j.checkShorthandImports, X)))
 					return;
-				if (!Q.checkShorthandProperties && VQ(J)) return;
-				let G = H.type === "Variable" && S(H.node) && H.node.init === null,
-					U =
-						H.type === "Parameter" &&
-						Y.scope.type === "function" &&
-						Y.scope.block.type === "ArrowFunctionExpression",
-					W = G || U,
-					O = (B, F) => {
-						if (!K(B, F)) return !1;
-						if (W && B === "arguments") return !1;
+				if (!j.checkShorthandProperties && Gj(H)) return;
+				let T = X.type === "Variable" && w(X.node) && X.node.init === null,
+					J =
+						X.type === "Parameter" &&
+						$.scope.type === "function" &&
+						$.scope.block.type === "ArrowFunctionExpression",
+					M = T || J,
+					G = (V, O) => {
+						if (!Z(V, O)) return !1;
+						if (M && V === "arguments") return !1;
 						return !0;
 					},
-					z = L(Y.name, Q);
-				if (z.total === 0 || !z.samples) return;
-				let { references: E } = Y,
-					D = [...E.map((B) => B.from), Y.scope],
-					v = 0,
-					I = z.samples
-						.map((B) => {
-							let F = HQ(B, D, O);
-							if (F === void 0) return;
-							if (F !== B && hQ(B, Q)) {
-								v += 1;
+					W = D($.name, j);
+				if (W.total === 0 || !W.samples) return;
+				let { references: S } = $,
+					F = [...S.map((V) => V.from), $.scope],
+					f = 0,
+					_ = W.samples
+						.map((V) => {
+							let O = Mj(V, F, G);
+							if (O === void 0) return;
+							if (O !== V && xj(V, j)) {
+								f += 1;
 								return;
 							}
-							return F;
+							return O;
 						})
-						.filter((B) => typeof B === "string" && B.length > 0),
-					x = I.length > 0 ? I : z.samples,
+						.filter((V) => typeof V === "string" && V.length > 0),
+					P = _.length > 0 ? _ : W.samples,
 					R =
-						typeof z.samples?.length === "number" && z.samples.length === z.total
-							? Math.max(0, z.total - v)
-							: z.total,
-					Mq = Y.name === "fn" && R > 1 ? x.map((B) => (B === "function_" ? "function" : B)) : x,
-					b = T(J.name, { samples: Mq, total: R }, "variable");
-				if (R === 1 && I.length === 1 && DQ(Y)) {
-					let [B] = I;
-					if (B !== void 0) {
-						for (let _ of D) {
-							if (!$.has(_)) $.set(_, new Set());
-							$.get(_)?.add(B);
+						typeof W.samples?.length === "number" && W.samples.length === W.total
+							? Math.max(0, W.total - f)
+							: W.total,
+					Ty = $.name === "fn" && R > 1 ? P.map((V) => (V === "function_" ? "function" : V)) : P,
+					v = I(H.name, { samples: Ty, total: R }, "variable");
+				if (R === 1 && _.length === 1 && wj($)) {
+					let [V] = _;
+					if (V !== void 0) {
+						for (let k of F) {
+							if (!q.has(k)) q.set(k, new Set());
+							q.get(k)?.add(V);
 						}
-						let F = jq(Y);
-						q.report({
-							...b,
-							fix(_) {
-								let h = [],
-									Vq = 0;
-								for (let Bq of F) {
-									let f = _.replaceText(Bq, B);
-									if (f === void 0) continue;
-									h[Vq++] = f;
+						let O = Hy($);
+						y.report({
+							...v,
+							fix(k) {
+								let E = [],
+									My = 0;
+								for (let Wy of O) {
+									let x = k.replaceText(Wy, V);
+									if (x === void 0) continue;
+									E[My++] = x;
 								}
-								return h;
+								return E;
 							},
-							node: J,
+							node: H,
 						});
 						return;
 					}
 				}
-				q.report({ ...b, node: J });
+				y.report({ ...v, node: H });
 			}
-			function j(Y) {
-				if (!EQ(Y)) {
-					X(Y);
+			function K($) {
+				if (!Pj($)) {
+					Y($);
 					return;
 				}
-				if (Y.scope.type === "class") {
-					let [H] = Y.defs;
-					if (H === void 0) {
-						X(Y);
+				if ($.scope.type === "class") {
+					let [X] = $.defs;
+					if (X === void 0) {
+						Y($);
 						return;
 					}
-					let J = H.name;
-					if (!w(J)) {
-						X(Y);
+					let H = X.name;
+					if (!N(H)) {
+						Y($);
 						return;
 					}
-					X(Y);
+					Y($);
 				}
 			}
-			function V(Y) {
-				for (let H of Xq(Y)) for (let J of H.variables) j(J);
+			function U($) {
+				for (let X of By($)) for (let H of X.variables) K(H);
 			}
 			return {
-				Identifier(Y) {
-					if (!Q.checkProperties || !k(Y) || Y.name === "__proto__") return;
-					let H = L(Y.name, Q);
-					if (H.total === 0 || !IQ(Y)) return;
-					let J = T(Y.name, H, "property");
-					if (H.total === 1 && H.samples && NQ(Y)) {
-						let [G] = H.samples,
-							{ parent: U } = Y;
-						if (G !== void 0 && y(U) && N(U.value) && g(G)) {
-							q.report({
-								...J,
-								fix(W) {
-									return W.replaceText(Y, G);
+				Identifier($) {
+					if (!j.checkProperties || !z($) || $.name === "__proto__") return;
+					let X = D($.name, j);
+					if (X.total === 0 || !gj($)) return;
+					let H = I($.name, X, "property");
+					if (X.total === 1 && X.samples && hj($)) {
+						let [T] = X.samples,
+							{ parent: J } = $;
+						if (T !== void 0 && g(J) && L(J.value) && h(T)) {
+							y.report({
+								...H,
+								fix(M) {
+									return M.replaceText($, T);
 								},
-								node: Y,
+								node: $,
 							});
 							return;
 						}
 					}
-					q.report({ ...J, node: Y });
+					y.report({ ...H, node: $ });
 				},
-				JSXOpeningElement(Y) {
-					if (!Q.checkVariables || !$q(Y.name) || !Zq(Y.name.name)) return;
-					let H = L(Y.name.name, Q);
-					if (H.total === 0) return;
-					let J = T(Y.name.name, H, "variable");
-					q.report({ ...J, node: Y.name });
+				JSXOpeningElement($) {
+					if (!j.checkVariables || !Yy($.name) || !$y($.name.name)) return;
+					let X = D($.name.name, j);
+					if (X.total === 0) return;
+					let H = I($.name.name, X, "variable");
+					y.report({ ...H, node: $.name });
 				},
-				"Program:exit"(Y) {
-					if (Q.checkFilenames && Z !== "<input>" && Z !== "<text>") {
-						let J = Math.max(Z.lastIndexOf("/"), Z.lastIndexOf("\\")),
-							G = Z.slice(J + 1),
-							U = G.lastIndexOf("."),
-							W = U === -1 ? "" : G.slice(U),
-							O = U === -1 ? G : G.slice(0, U),
-							z = L(O, Q);
-						if (z.total > 0 && z.samples) {
-							let E = z.samples.map((D) => `${D}${W}`);
-							q.report({ ...T(G, { samples: E, total: z.total }, "filename"), node: Y });
+				"Program:exit"($) {
+					if (j.checkFilenames && Q !== "<input>" && Q !== "<text>") {
+						let H = Math.max(Q.lastIndexOf("/"), Q.lastIndexOf("\\")),
+							T = Q.slice(H + 1),
+							J = T.lastIndexOf("."),
+							M = J === -1 ? "" : T.slice(J),
+							G = J === -1 ? T : T.slice(0, J),
+							W = D(G, j);
+						if (W.total > 0 && W.samples) {
+							let S = W.samples.map((F) => `${F}${M}`);
+							y.report({ ...I(T, { samples: S, total: W.total }, "filename"), node: $ });
 						}
 					}
-					if (!Q.checkVariables) return;
-					let H = q.sourceCode.getScope(Y);
-					V(H);
+					if (!j.checkVariables) return;
+					let X = y.sourceCode.getScope($);
+					U(X);
 				},
 			};
 		},
@@ -950,13 +1028,16 @@ const gQ = iq({
 			docs: { description: "Prevent abbreviations.", recommended: !1 },
 			fixable: "code",
 			messages: {
-				[qq]: `The {{nameTypeText}} \`{{discouragedName}}\` should be named \`{{replacement}}\`. ${o}`,
-				[Qq]: `Please rename the {{nameTypeText}} \`{{discouragedName}}\`. Suggested names are: {{replacementsText}}. ${o}`,
+				[qy]: `The {{nameTypeText}} \`{{discouragedName}}\` should be named \`{{replacement}}\`. ${n}`,
+				[Zy]: `Please rename the {{nameTypeText}} \`{{discouragedName}}\`. Suggested names are: {{replacementsText}}. ${n}`,
 			},
 			type: "suggestion",
 		},
 	}),
-	Uq = gQ;
-const vQ = PQ({ meta: { name: "small-rules" }, rules: { "no-commented-code": a, "prevent-abbreviations": Uq } }),
-	MZ = vQ;
-export { MZ as default };
+	Vy = pj;
+const lj = mj({
+		meta: { name: "small-rules" },
+		rules: { "ban-types": m, "no-commented-code": t, "prevent-abbreviations": Vy },
+	}),
+	_Q = lj;
+export { _Q as default };

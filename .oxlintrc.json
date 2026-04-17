@@ -275,6 +275,14 @@
 		// This rule sucks man wtf
 		"promise/prefer-await-to-callbacks": "off",
 		"require-yield": "error",
+		"small-rules/ban-types": [
+			"error",
+			{
+				"bannedTypes": {
+					"Omit": "Except",
+				},
+			},
+		],
 		"small-rules/no-commented-code": "error",
 		"small-rules/prevent-abbreviations": "error",
 		"sort-imports": [
