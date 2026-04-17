@@ -22,6 +22,7 @@
 		"**/node_modules/**",
 		"tests/fixtures/**/*.d.ts",
 		".context/**",
+		"plugins/oxc/small-rules.js",
 	],
 	"jsPlugins": ["./plugins/oxc/small-rules.js"],
 	"options": {

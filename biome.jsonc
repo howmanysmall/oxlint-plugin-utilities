@@ -31,7 +31,7 @@
 	},
 
 	"files": {
-		"includes": ["**", "!bun.lock", "!package.json"]
+		"includes": ["**", "!bun.lock", "!package.json", "!plugins/oxc/small-rules.js"]
 	},
 
 	"formatter": {

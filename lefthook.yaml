@@ -1,9 +1,9 @@
-min_version: 2.1.4
-
 commit-msg:
   jobs:
     - name: commitlint
       run: bun x --bun commitlint --edit {1}
+
+min_version: 2.1.4
 
 post-merge:
   jobs:
@@ -11,54 +11,53 @@ post-merge:
       run: bun install
 
 pre-commit:
-  parallel: true
   jobs:
-    - name: biome-json
-      glob:
+    - glob:
         - "*.css"
         - "*.html"
         - "*.json"
         - "*.jsonc"
         - "*.grit"
         - "*.code-workspace"
+      name: biome-json
       run: bun run biome:check --write --no-errors-on-unmatched {staged_files}
       stage_fixed: true
 
-    - name: js-ts-fix
-      glob:
+    - glob:
         - "*.js"
         - "*.jsx"
         - "*.ts"
         - "*.tsx"
+      name: js-ts-fix
       run: |
         bun run oxc --fix {staged_files}
         bun run biome:check --write --no-errors-on-unmatched {staged_files}
         bun run format {staged_files}
       stage_fixed: true
 
-    - name: format-json5-mdx
-      glob:
+    - glob:
         - "*.json5"
         - "*.mdx"
+      name: format-json5-mdx
       run: bun run format {staged_files}
       stage_fixed: true
 
-    - name: md-fix
-      glob: "*.md"
+    - glob: "*.md"
+      name: md-fix
       run: |
         rumdl check --fix {staged_files}
         rumdl fmt {staged_files}
       stage_fixed: true
 
-    - name: toml-fix
-      glob: "*.toml"
+    - glob: "*.toml"
+      name: toml-fix
       run: |
         tombi lint {staged_files}
         tombi format {staged_files}
       stage_fixed: true
+  parallel: true
 
 pre-push:
-  parallel: true
   jobs:
     - name: biome-ci
       run: bun run biome:ci
@@ -74,3 +73,4 @@ pre-push:
 
     - name: build
       run: bun run build
+  parallel: true
