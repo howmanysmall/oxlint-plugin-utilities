@@ -6,9 +6,8 @@ const configuration: KnipConfig = {
 	bun: true,
 	changelogithub: true,
 	commitlint: true,
-	ignore: ["src/index.test-d.ts"],
 	ignoreBinaries: ["lefthook"],
-	ignoreDependencies: ["changelogithub"],
+	ignoreDependencies: [],
 	lefthook: true,
 	oxlint: true,
 	project: ["src/**/*.ts", "scripts/**/*.ts"],
@@ -31,6 +30,7 @@ const configuration: KnipConfig = {
 	typescript: {
 		config: ["tsconfig.json", "tsconfig.base.json"],
 	},
+	vitest: true,
 };
 
 export default configuration;

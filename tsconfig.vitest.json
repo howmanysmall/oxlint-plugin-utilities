@@ -1,0 +1,11 @@
+{
+	"compilerOptions": {
+		"noEmit": true,
+		"noUncheckedIndexedAccess": true,
+		"rootDir": ".",
+		"types": ["bun", "node", "vitest/globals"],
+	},
+	"exclude": ["dist", "node_modules"],
+	"extends": "./tsconfig.base.json",
+	"include": ["src/**/*.ts", "tests/**/*.ts", "tests/**/*.test-d.ts", "vitest.config.ts"],
+}

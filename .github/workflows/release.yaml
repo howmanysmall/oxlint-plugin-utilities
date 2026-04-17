@@ -138,7 +138,7 @@ jobs:
       - name: Install dependencies
         run: bun ci
 
-      - name: Run type tests
+      - name: Run tests
         run: bun run test
 
   publish:

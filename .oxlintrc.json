@@ -15,7 +15,6 @@
 		"node": true,
 	},
 	"extends": [],
-	"globals": {},
 	"ignorePatterns": [
 		"dist",
 		"**/do-not-sync-ever/**",
@@ -23,8 +22,10 @@
 		"**/node_modules/**",
 		"tests/fixtures/**/*.d.ts",
 		".context/**",
+		"plugins/oxc/small-rules.js",
+		"**/dist/**",
 	],
-	"jsPlugins": [],
+	"jsPlugins": ["./plugins/oxc/small-rules.js"],
 	"options": {
 		"denyWarnings": true,
 		"maxWarnings": 0,
@@ -40,23 +41,52 @@
 			},
 		},
 		{
-			"files": ["tests/fixtures/**/*.ts"],
-			"rules": {
-				"import/no-anonymous-default-export": "off",
-				"unicorn/filename-case": "off",
-			},
-		},
-		{
 			"files": ["scripts/**/*.ts"],
 			"globals": {
 				"Bun": "readonly",
+			},
+			"rules": {
+				"complexity": "off",
+				"max-lines": "off",
+				"max-lines-per-function": "off",
+				"no-bitwise": "off",
+				"no-console": "off",
+			},
+		},
+		{
+			"files": ["tests/**/*"],
+			"plugins": ["eslint", "import", "jsdoc", "node", "oxc", "promise", "typescript", "unicorn", "vitest"],
+			"rules": {
+				"vitest/consistent-each-for": "error",
+				"vitest/consistent-test-filename": "error",
+				"vitest/consistent-vitest-vi": "error",
+				"vitest/hoisted-apis-on-top": "error",
+				"vitest/no-conditional-tests": "error",
+				"vitest/no-import-node-test": "error",
+				"vitest/no-importing-vitest-globals": "off",
+				"vitest/prefer-called-exactly-once-with": "error",
+				"vitest/prefer-called-once": "error",
+				"vitest/prefer-called-times": "error",
+				"vitest/prefer-describe-function-title": "error",
+				"vitest/prefer-expect-type-of": "error",
+				"vitest/prefer-import-in-mock": "error",
+				"vitest/prefer-importing-vitest-globals": "error",
+				"vitest/prefer-strict-boolean-matchers": "off",
+				"vitest/prefer-to-be-falsy": "error",
+				"vitest/prefer-to-be-object": "error",
+				"vitest/prefer-to-be-truthy": "error",
+				"vitest/require-awaited-expect-poll": "error",
+				"vitest/require-local-test-context-for-concurrent-snapshots": "error",
+				"vitest/require-mock-type-parameters": "error",
+				"vitest/require-test-timeout": "error",
+				"vitest/warn-todo": "error",
 			},
 		},
 	],
 	"plugins": ["eslint", "import", "jsdoc", "node", "oxc", "promise", "typescript", "unicorn"],
 	"rules": {
 		"arrow-body-style": ["error", "as-needed"],
-		"complexity": "off",
+		"complexity": "error",
 		"curly": ["error", "multi-line"],
 		"default-case": "off",
 		"eqeqeq": "error",
@@ -72,7 +102,7 @@
 		"eslint/no-use-before-define": "off",
 		"eslint/require-await": "off",
 		"for-direction": "error",
-		"func-names": ["off", "never", { "generators": "never" }],
+		"func-names": ["error", "as-needed", { "generators": "as-needed" }],
 		"func-style": [
 			"error",
 			"declaration",
@@ -109,13 +139,33 @@
 		"import/no-named-export": "off",
 		"import/no-nodejs-modules": "off",
 		"import/no-relative-parent-imports": "off",
+		"import/no-unassigned-import": [
+			"error",
+			{
+				"allow": ["**/*.css", "@total-typescript/ts-reset"],
+			},
+		],
 		"import/prefer-default-export": "off",
 		"init-declarations": "off",
 		"jsdoc/require-param-type": "off",
 		"jsdoc/require-property-type": "off",
 		"jsdoc/require-returns-type": "off",
-		"max-lines": "off",
-		"max-lines-per-function": "off",
+		"max-lines": [
+			"warn",
+			{
+				"max": 400,
+				"skipBlankLines": true,
+				"skipComments": true,
+			},
+		],
+		"max-lines-per-function": [
+			"warn",
+			{
+				"max": 75,
+				"skipBlankLines": true,
+				"skipComments": true,
+			},
+		],
 		"max-params": [
 			"error",
 			{
@@ -123,8 +173,8 @@
 				"max": 7,
 			},
 		],
-		"max-statements": "off",
-		"new-cap": "off",
+		"max-statements": ["off", { "max": 15 }],
+		"new-cap": "error",
 		"no-array-constructor": "off",
 		"no-async-promise-executor": "error",
 		"no-await-in-loop": "error",
@@ -133,7 +183,7 @@
 		"no-class-assign": "error",
 		"no-compare-neg-zero": "error",
 		"no-cond-assign": "error",
-		"no-console": "off",
+		"no-console": "error",
 		"no-const-assign": "error",
 		"no-constant-binary-expression": "error",
 		"no-constant-condition": "error",
@@ -145,8 +195,14 @@
 		"no-dupe-else-if": "error",
 		"no-dupe-keys": "error",
 		"no-duplicate-case": "error",
-		"no-duplicate-imports": "off",
-		"no-else-return": "off",
+		"no-duplicate-imports": [
+			"error",
+			{
+				"allowSeparateTypeImports": true,
+				"includeExports": false,
+			},
+		],
+		"no-else-return": "error",
 		"no-empty": "error",
 		"no-empty-character-class": "error",
 		"no-empty-pattern": "error",
@@ -189,6 +245,8 @@
 		"no-unused-labels": "error",
 		"no-unused-private-class-members": "error",
 		"no-unused-vars": "error",
+		// rule that does not work!
+		"no-useless-assignment": "off",
 		"no-useless-backreference": "error",
 		"no-useless-catch": "error",
 		"no-useless-concat": "error",
@@ -216,8 +274,19 @@
 		"prefer-spread": "error",
 		"prefer-template": "error",
 		"promise/avoid-new": "off",
+		// This rule sucks man wtf
 		"promise/prefer-await-to-callbacks": "off",
 		"require-yield": "error",
+		"small-rules/ban-types": [
+			"error",
+			{
+				"bannedTypes": {
+					"Omit": "Except",
+				},
+			},
+		],
+		"small-rules/no-commented-code": "error",
+		"small-rules/prevent-abbreviations": "error",
 		"sort-imports": [
 			"error",
 			{
@@ -246,14 +315,16 @@
 			},
 		],
 		// nursery... obviously. because it doesn't work.
-		"typescript/consistent-return": "off",
-		"typescript/no-unnecessary-condition": "off",
-		"typescript/no-unsafe-type-assertion": "off",
-		// types can be wrong.
-		"typescript/no-useless-default-assignment": "off",
-		"typescript/prefer-optional-chain": "off",
+		"typescript/consistent-return": "error",
+		"typescript/no-unnecessary-condition": "error",
+		"typescript/no-unsafe-type-assertion": "error",
+		// Types can be wrong, especially when dealing with packages that use `.d.ts` instead.
+		// Highly recommended to disable this on a case-by-case basis.
+		"typescript/no-useless-default-assignment": "error",
+		"typescript/prefer-optional-chain": "error",
+		// Not always in my control.
 		"typescript/prefer-readonly-parameter-types": "off",
-		"typescript/strict-boolean-expressions": "off",
+		"typescript/strict-boolean-expressions": "error",
 		"typescript/use-unknown-in-catch-callback-variable": "error",
 		"unicorn/catch-error-name": "error",
 		"unicorn/consistent-assert": "error",
@@ -289,7 +360,7 @@
 		"unicorn/no-new-buffer": "error",
 		"unicorn/no-null": "error",
 		"unicorn/no-object-as-default-parameter": "error",
-		"unicorn/no-process-exit": "off",
+		"unicorn/no-process-exit": "error",
 		"unicorn/no-static-only-class": "error",
 		"unicorn/no-this-assignment": "error",
 		"unicorn/no-typeof-undefined": "error",
@@ -303,14 +374,8 @@
 		"unicorn/no-useless-promise-resolve-reject": "error",
 		"unicorn/no-useless-switch-case": "error",
 		"unicorn/no-zero-fractions": "error",
-		"import/no-unassigned-import": [
-			"error",
-			{
-				"allow": ["**/*.css", "@total-typescript/ts-reset"],
-			},
-		],
 		"unicorn/number-literal-case": "off",
-		"unicorn/numeric-separators-style": "error",
+		"unicorn/numeric-separators-style": "off",
 		"unicorn/prefer-array-find": "error",
 		"unicorn/prefer-array-flat": "error",
 		"unicorn/prefer-array-flat-map": "error",

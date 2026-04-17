@@ -85,7 +85,7 @@ function isBuildPosition(position: unknown): position is BuildMessage["position"
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
-	return typeof value === "object" && value !== null;
+	return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 function isValidMessageLevel(level: unknown): level is BuildMessage["level"] {
@@ -109,6 +109,7 @@ const EXTERNAL_PACKAGES = [
 interface BuildOptions {
 	readonly clean: boolean;
 	readonly minify: boolean;
+	readonly silent: boolean;
 	readonly sourcemap: boolean;
 	readonly verbose: boolean;
 }
@@ -155,7 +156,7 @@ function formatBuildMessage({ position, message }: BuildRelatedMessage): string 
 		parts[size++] = `${gray(String(line))} | ${lineText}`;
 
 		const padding = " ".repeat(String(line).length + 3 + column - 1);
-		const underline = "^".repeat(Math.max(1, length ?? 1));
+		const underline = "^".repeat(Math.max(1, length));
 		parts[size++] = `${padding}${red(underline)}`;
 	}
 
@@ -178,7 +179,7 @@ function getTsgoExecutablePath(): string {
 	return executablePath;
 }
 
-async function cleanDistDirectoryAsync(verbose: boolean): Promise<void> {
+async function cleanOutputDirectoryAsync(verbose: boolean): Promise<void> {
 	if (existsSync(DIST_DIRECTORY)) {
 		if (verbose) console.info(`Removing ${cyan(DIST_DIRECTORY)}...`);
 		await rm(DIST_DIRECTORY, { recursive: true });
@@ -242,7 +243,8 @@ function getSourceDeclarationRelativePaths(sourceDirectory: string): ReadonlyArr
 
 async function readDeclarationSupportManifestAsync(manifestPath: string): Promise<ReadonlyArray<string>> {
 	const manifestFile = file(manifestPath);
-	if (!(await manifestFile.exists())) return [];
+	const exists = await manifestFile.exists();
+	if (!exists) return [];
 
 	try {
 		const manifest: unknown = await manifestFile.json();
@@ -339,8 +341,7 @@ async function getOutputFilesAsync(directory: string): Promise<ReadonlyArray<Out
 	}
 
 	const files = await walk(directory);
-	// oxlint-disable-next-line no-array-sort
-	return [...files].sort((left, right) => left.path.localeCompare(right.path));
+	return [...files].toSorted((left, right) => left.path.localeCompare(right.path));
 }
 
 async function runBuildAsync(options: BuildOptions): Promise<BuildResult> {
@@ -349,7 +350,7 @@ async function runBuildAsync(options: BuildOptions): Promise<BuildResult> {
 	try {
 		if (options.clean) {
 			if (options.verbose) console.start("Cleaning dist directory...");
-			await cleanDistDirectoryAsync(options.verbose);
+			await cleanOutputDirectoryAsync(options.verbose);
 			if (options.verbose) console.success("Cleaned dist directory");
 		}
 
@@ -434,9 +435,9 @@ async function runBuildAsync(options: BuildOptions): Promise<BuildResult> {
 	}
 }
 
-function printBuildSummary({ files, duration, success }: BuildResult, verbose: boolean): void {
+function printBuildSummary({ files, duration, success }: BuildResult, verbose: boolean, silent: boolean): void {
 	if (!success) {
-		console.fail(red(`Build failed in ${prettyMilliseconds(duration)}`));
+		if (!silent) console.fail(red(`Build failed in ${prettyMilliseconds(duration)}`));
 		return;
 	}
 
@@ -445,9 +446,11 @@ function printBuildSummary({ files, duration, success }: BuildResult, verbose: b
 	const mapFiles = files.filter(({ path }) => path.endsWith(".js.map"));
 	const totalSize = files.reduce((sum, { size }) => sum + size, 0);
 
-	console.log("");
-	console.success(green(bold("Build completed successfully!")));
-	console.log("");
+	if (!silent) {
+		console.log("");
+		console.success(green(bold("Build completed successfully!")));
+		console.log("");
+	}
 
 	if (verbose) {
 		console.info(bold("Output files:"));
@@ -467,7 +470,7 @@ function printBuildSummary({ files, duration, success }: BuildResult, verbose: b
 }
 
 try {
-	await cleanDistDirectoryAsync(false);
+	await cleanOutputDirectoryAsync(false);
 } catch {
 	// I do not care.
 }
@@ -479,9 +482,10 @@ const command = new Command()
 	.option("--no-clean", "Skip cleaning dist/ before build", { default: true })
 	.option("-v, --verbose", "Show detailed build output", { default: false })
 	.option("-m, --minify", "Aggressively minify identifiers and syntax", { default: false })
+	.option("-s, --silent", "Suppress non-error output", { default: false })
 	.option("--sourcemap", "Generate sourcemaps", { default: false })
-	.action(async ({ clean, minify, sourcemap, verbose }) => {
-		const options: BuildOptions = { clean, minify, sourcemap, verbose };
+	.action(async ({ clean, minify, silent, sourcemap, verbose }) => {
+		const options: BuildOptions = { clean, minify, silent, sourcemap, verbose };
 
 		if (verbose) {
 			console.info(bold("Build configuration:"));
@@ -492,7 +496,7 @@ const command = new Command()
 		}
 
 		const result = await runBuildAsync(options);
-		printBuildSummary(result, verbose);
+		printBuildSummary(result, verbose, silent);
 
 		if (!result.success) exit(1);
 	});

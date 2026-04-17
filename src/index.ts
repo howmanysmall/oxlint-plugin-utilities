@@ -7,10 +7,19 @@ export type {
 	CreateRule,
 	Diagnostic,
 	InferContextFromRule,
+	InferOptionsFromSchema,
+	InferSchemaPropertyType,
+	InferSchemaType,
 	Plugin,
 	Rule,
+	RuleArraySchema,
 	RuleMeta,
+	RuleObjectSchema,
 	RuleOptions,
+	RuleSchema,
+	RuleSchemaDefinition,
+	RuleSchemaTypeName,
+	RuleSchemaValue,
 } from "./types";
 
 export type {
