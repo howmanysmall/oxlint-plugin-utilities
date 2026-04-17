@@ -23,6 +23,7 @@
 		"tests/fixtures/**/*.d.ts",
 		".context/**",
 		"plugins/oxc/small-rules.js",
+		"**/dist/**",
 	],
 	"jsPlugins": ["./plugins/oxc/small-rules.js"],
 	"options": {

@@ -179,7 +179,7 @@ function getTsgoExecutablePath(): string {
 	return executablePath;
 }
 
-async function cleanDistDirectoryAsync(verbose: boolean): Promise<void> {
+async function cleanOutputDirectoryAsync(verbose: boolean): Promise<void> {
 	if (existsSync(DIST_DIRECTORY)) {
 		if (verbose) console.info(`Removing ${cyan(DIST_DIRECTORY)}...`);
 		await rm(DIST_DIRECTORY, { recursive: true });
@@ -350,7 +350,7 @@ async function runBuildAsync(options: BuildOptions): Promise<BuildResult> {
 	try {
 		if (options.clean) {
 			if (options.verbose) console.start("Cleaning dist directory...");
-			await cleanDistDirectoryAsync(options.verbose);
+			await cleanOutputDirectoryAsync(options.verbose);
 			if (options.verbose) console.success("Cleaned dist directory");
 		}
 
@@ -470,7 +470,7 @@ function printBuildSummary({ files, duration, success }: BuildResult, verbose: b
 }
 
 try {
-	await cleanDistDirectoryAsync(false);
+	await cleanOutputDirectoryAsync(false);
 } catch {
 	// I do not care.
 }

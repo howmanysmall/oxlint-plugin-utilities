@@ -5,25 +5,25 @@ function B(y) {
 }
 function u(y) {
 	if (!Array.isArray(y)) return !1;
-	for (const j of y) if (typeof j !== "string") return !1;
+	for (let j of y) if (typeof j !== "string") return !1;
 	return !0;
 }
 function p(y) {
 	if (!B(y)) return !1;
-	for (const j of Object.values(y)) if (typeof j !== "string") return !1;
+	for (let j of Object.values(y)) if (typeof j !== "string") return !1;
 	return !0;
 }
-const zy = new Map([["omit", { originalName: "Omit", replacementName: "Except" }]]);
+var zy = new Map([["omit", { originalName: "Omit", replacementName: "Except" }]]);
 function Gy(y) {
-	const j = new Map(zy);
+	let j = new Map(zy);
 	if (!B(y) || !("bannedTypes" in y)) return j;
-	const { bannedTypes: Q } = y;
+	let { bannedTypes: Q } = y;
 	if (Q === void 0) return j;
 	if (u(Q)) {
-		for (const q of Q) j.set(q.toLowerCase(), { originalName: q, replacementName: void 0 });
+		for (let q of Q) j.set(q.toLowerCase(), { originalName: q, replacementName: void 0 });
 		return j;
 	}
-	if (p(Q)) for (const [q, Z] of Object.entries(Q)) j.set(q.toLowerCase(), { originalName: q, replacementName: Z });
+	if (p(Q)) for (let [q, Z] of Object.entries(Q)) j.set(q.toLowerCase(), { originalName: q, replacementName: Z });
 	return j;
 }
 function ky(y) {
@@ -31,7 +31,7 @@ function ky(y) {
 	if (y.type === "TSQualifiedName") return y.right.name;
 	return;
 }
-const Fy = Oy({
+var Fy = Oy({
 		create(y) {
 			let j = Gy(y.options[0]);
 			if (j.size === 0) return {};
@@ -81,7 +81,7 @@ const Fy = Oy({
 	}),
 	m = Fy;
 import { extname as hy } from "node:path";
-import { parseSync as index } from "oxc-parser";
+import { parseSync as i } from "oxc-parser";
 import { defineRule as by } from "oxlint-plugin-utilities";
 function l(y, j) {
 	let Q = y.scan(j);
@@ -331,23 +331,23 @@ function o(y) {
 }
 function yj(y, j) {
 	let Q = hy(j),
-		q = `file${Q ?? ".js"}`,
-		Z = index(q, y);
+		q = `file${Q || ".js"}`,
+		Z = i(q, y);
 	if (o(Z)) return Z;
 	if (Q !== ".tsx" && Q !== ".jsx") {
-		let Y = index("file.tsx", y);
+		let Y = i("file.tsx", y);
 		if (o(Y)) return Y;
 	}
 	return;
 }
-function jj(y, index) {
+function jj(y, j) {
 	if (!cy(y)) return !1;
-	let Q = yj(y, index);
+	let Q = yj(y, j);
 	if (!Q) return !1;
-	const q = iy(Q.program.body);
+	let q = iy(Q.program.body);
 	return !ty(q, y);
 }
-const Qj = by({
+var Qj = by({
 		create(y) {
 			return {
 				"Program:exit"() {
@@ -390,7 +390,7 @@ const Qj = by({
 	}),
 	t = Qj;
 import { defineRule as qj } from "oxlint-plugin-utilities";
-const qy = "replace",
+var qy = "replace",
 	Zy = "suggestion",
 	n = "A more descriptive name will do too.",
 	Zj = {
@@ -582,18 +582,18 @@ function Jj(y) {
 function Ky(y) {
 	if (!Jj(y)) return !1;
 	if (y.optional) return !1;
-	const { callee: j } = y;
+	let { callee: j } = y;
 	if (!N(j) || j.name !== "require" || y.arguments.length !== 1) return !1;
-	const [Q] = y.arguments;
+	let [Q] = y.arguments;
 	return Q !== void 0 && L(Q);
 }
 function h(y) {
 	if (y.length === 0 || Xj.has(y)) return !1;
-	const j = y.codePointAt(0);
+	let j = y.codePointAt(0);
 	if (j === void 0 || !Xy(j)) return !1;
 	let Q = j > 65535 ? 2 : 1;
 	while (Q < y.length) {
-		const q = y.codePointAt(Q);
+		let q = y.codePointAt(Q);
 		if (q === void 0 || !Uj(q)) return !1;
 		Q += q > 65535 ? 2 : 1;
 	}
@@ -628,44 +628,44 @@ function Uj(y) {
 	return !1;
 }
 function By(y) {
-	const j = [y];
-	for (const Q of y.childScopes) {
-		const q = By(Q);
-		for (const Z of q) j.push(Z);
+	let j = [y];
+	for (let Q of y.childScopes) {
+		let q = By(Q);
+		for (let Z of q) j.push(Z);
 	}
 	return j;
 }
-function Vj(y, index) {
-	let Q = index;
+function Vj(y, j) {
+	let Q = j;
 	while (Q !== null) {
-		const q = Q.set.get(y);
+		let q = Q.set.get(y);
 		if (q !== void 0) return q;
 		Q = Q.upper;
 	}
 	return;
 }
-function Tj(y, index) {
-	return !index.some((Q) => Vj(y, Q) !== void 0);
+function Tj(y, j) {
+	return !j.some((Q) => Vj(y, Q) !== void 0);
 }
-function Mj(y, index, Q = () => !0) {
+function Mj(y, j, Q = () => !0) {
 	let q = y;
 	if (!h(q)) {
 		if (((q = `${q}_`), !h(q))) return;
 	}
-	while (!Tj(q, index) || !Q(q, index)) q = `${q}_`;
+	while (!Tj(q, j) || !Q(q, j)) q = `${q}_`;
 	return q;
 }
 function Hy(y) {
-	const j = new Set();
-	for (const Q of y.identifiers) j.add(Q);
-	for (const { identifier: Q } of y.references) j.add(Q);
+	let j = new Set();
+	for (let Q of y.identifiers) j.add(Q);
+	for (let { identifier: Q } of y.references) j.add(Q);
 	return [...j];
 }
-function Wj(y, index) {
-	return y.range[0] === index.range[0] && y.range[1] === index.range[1];
+function Wj(y, j) {
+	return y.range[0] === j.range[0] && y.range[1] === j.range[1];
 }
 function Oj(y) {
-	const { parent: j } = y;
+	let { parent: j } = y;
 	if (!Jy(j) || j.local !== y) return !1;
 	return Wj(j.local, j.imported);
 }
@@ -680,13 +680,13 @@ function g(y) {
 }
 function Gj(y) {
 	if (!z(y)) return !1;
-	const { parent: j } = y;
+	let { parent: j } = y;
 	return g(j) && j.shorthand && j.value === y;
 }
 function kj(y) {
 	if (!z(y)) return !1;
-	const { parent: j } = y;
-	if ((Fj(j) && j.local === y) || (_index(j) && j.local === y)) return !0;
+	let { parent: j } = y;
+	if ((Fj(j) && j.local === y) || (_j(j) && j.local === y)) return !0;
 	if (Jy(j) && j.local === y) {
 		let { imported: Q } = j;
 		if (N(Q) && Q.name === "default") return !0;
@@ -697,17 +697,17 @@ function kj(y) {
 function Fj(y) {
 	return B(y) && y.type === "ImportDefaultSpecifier";
 }
-function _index(y) {
+function _j(y) {
 	return B(y) && y.type === "ImportNamespaceSpecifier";
 }
 function Aj(y) {
 	if (!z(y)) return !1;
-	const { parent: j } = y;
+	let { parent: j } = y;
 	if (j === void 0 || j === null) return !1;
 	if (w(j) && j.id === y) {
-		const Q = j.parent;
+		let Q = j.parent;
 		if (!Dj(Q)) return !1;
-		const q = Q.parent;
+		let q = Q.parent;
 		return A(q);
 	}
 	if (Ij(j) && j.id === y) return A(j.parent);
@@ -731,13 +731,13 @@ function Lj(y) {
 	return B(y) && y.type === "TSTypeAliasDeclaration";
 }
 function wj(y) {
-	return Hy(y).every((index) => !Aj(index) && !Yy(index));
+	return Hy(y).every((j) => !Aj(j) && !Yy(j));
 }
 function gj(y) {
 	if (!z(y)) return !1;
-	const { parent: j } = y;
+	let { parent: j } = y;
 	if (Sj(j) && j.property === y && !j.computed) {
-		const Q = j.parent;
+		let Q = j.parent;
 		if (Rj(Q) && Q.left === j) return !0;
 	}
 	if (g(j) && j.key === y && !j.computed && !j.shorthand && Uy(j.parent)) return !0;
@@ -767,31 +767,31 @@ function Cj(y) {
 }
 function hj(y) {
 	if (!z(y)) return !1;
-	const { parent: j } = y;
+	let { parent: j } = y;
 	return g(j) && j.key === y && !j.computed && !j.shorthand && Uy(j.parent);
 }
 function bj(y) {
 	if (y.type === "ImportBinding") {
-		const { parent: j } = y;
+		let { parent: j } = y;
 		if (j !== null && Hj(j) && L(j.source)) return j.source.value;
 	}
 	if (y.type === "Variable") {
-		const { node: j } = y;
+		let { node: j } = y;
 		if (w(j) && Ky(j.init)) {
-			const [Q] = j.init.arguments;
+			let [Q] = j.init.arguments;
 			if (Q !== void 0 && L(Q)) return Q.value;
 		}
 	}
 	return;
 }
 function fj(y) {
-	const j = bj(y);
+	let j = bj(y);
 	if (j === void 0) return !1;
-	return !j.includes("node_modules") && (j.startsWith(".") ?? j.startsWith("/"));
+	return !j.includes("node_modules") && (j.startsWith(".") || j.startsWith("/"));
 }
-function jy(y, index) {
+function jy(y, j) {
 	if (y === !1) return !1;
-	return y === "internal" ? fj(index) : !0;
+	return y === "internal" ? fj(j) : !0;
 }
 function Pj(y) {
 	if (y.defs.length !== 1) return !1;
@@ -807,36 +807,36 @@ function vj() {
 		checkShorthandProperties: !1,
 		checkVariables: !0,
 		ignore: Yj.map((y) => new RegExp(y, "u")),
-		replacements: new Map(Object.entries(Zj).map(([y, index]) => [y, new Map(Object.entries(index))])),
+		replacements: new Map(Object.entries(Zj).map(([y, j]) => [y, new Map(Object.entries(j))])),
 	};
 }
-function Qy(y, index) {
-	if (b(y) || index.allowList.get(y) === !0) return [];
-	let Q = index.replacements.get(yy(y)) ?? index.replacements.get(y) ?? index.replacements.get(e(y));
+function Qy(y, j) {
+	if (b(y) || j.allowList.get(y) === !0) return [];
+	let Q = j.replacements.get(yy(y)) ?? j.replacements.get(y) ?? j.replacements.get(e(y));
 	if (!Q) return [];
-	const q = $y(y) ? e : yy,
+	let q = $y(y) ? e : yy,
 		Z = [...Q.keys()].filter((Y) => Q.get(Y) ?? !1).map(q);
 	return Z.length > 0 ? [...Z].toSorted() : [];
 }
-function xj(y, index) {
-	let Q = index.replacements.get(y);
+function xj(y, j) {
+	let Q = j.replacements.get(y);
 	if (!Q) return !1;
-	for (const q of Q.values()) if (q) return !0;
+	for (let q of Q.values()) if (q) return !0;
 	return !1;
 }
-function uj(y, index = Number.POSITIVE_INFINITY) {
+function uj(y, j = Number.POSITIVE_INFINITY) {
 	let Q = y.reduce((Y, { length: K }) => Y * K, 1),
-		q = Math.min(Q, index);
+		q = Math.min(Q, j);
 	return {
 		samples: Array.from({ length: q }, (Y, K) => {
-			const U = K,
+			let U = K,
 				$ = [];
 			for (let X = y.length - 1; X >= 0; X -= 1) {
-				const H = y[X] ?? [],
+				let H = y[X] ?? [],
 					T = H.length,
 					J = U % T;
 				U = (U - J) / T;
-				const M = H[J];
+				let M = H[J];
 				if (M !== void 0) $.unshift(M);
 			}
 			return $;
@@ -844,38 +844,38 @@ function uj(y, index = Number.POSITIVE_INFINITY) {
 		total: Q,
 	};
 }
-function D(y, index, Q = 3) {
-	let { allowList: q, ignore: Z } = index;
+function D(y, j, Q = 3) {
+	let { allowList: q, ignore: Z } = j;
 	if (b(y) || q.get(y) === !0 || Z.some((J) => J.test(y))) return { total: 0 };
-	let Y = Qy(y, index);
+	let Y = Qy(y, j);
 	if (Y.length > 0) return { samples: Y.slice(0, Q), total: Y.length };
 	let K = y.split(Kj).filter(Boolean),
 		U = !1,
 		$ = [],
 		X = 0;
 	for (let J of K) {
-		let M = Qy(J, index);
+		let M = Qy(J, j);
 		if (M.length > 0) ((U = !0), ($[X++] = M));
 		else $[X++] = [J];
 	}
 	if (!U) return { total: 0 };
-	const { samples: H, total: T } = uj($, Q);
-	for (const J of H)
+	let { samples: H, total: T } = uj($, Q);
+	for (let J of H)
 		for (let M = J.length - 1; M > 0; M -= 1) {
-			const G = J[M] ?? "";
+			let G = J[M] ?? "";
 			if (Bj.test(G) && J[M - 1]?.endsWith(G) === !0) J.splice(M, 1);
 		}
 	return { samples: H.map((J) => J.join("")), total: T };
 }
-function I(y, index, Q) {
-	let { samples: q = [], total: Z } = index;
+function I(y, j, Q) {
+	let { samples: q = [], total: Z } = j;
 	if (Z === 1) return { data: { discouragedName: y, nameTypeText: Q, replacement: q[0] ?? "" }, messageId: qy };
-	const Y = q.map((U) => `\`${U}\``).join(", "),
+	let Y = q.map((U) => `\`${U}\``).join(", "),
 		K = Z - q.length;
 	if (K > 0) Y += `, ... (${K > 99 ? "99+" : K} more omitted)`;
 	return { data: { discouragedName: y, nameTypeText: Q, replacementsText: Y }, messageId: Zy };
 }
-const pj = qj({
+var pj = qj({
 		create(y) {
 			let j = vj(),
 				Q = y.physicalFilename,
@@ -1035,7 +1035,7 @@ const pj = qj({
 		},
 	}),
 	Vy = pj;
-const lj = mj({
+var lj = mj({
 		meta: { name: "small-rules" },
 		rules: { "ban-types": m, "no-commented-code": t, "prevent-abbreviations": Vy },
 	}),

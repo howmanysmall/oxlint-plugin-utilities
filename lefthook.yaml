@@ -66,6 +66,12 @@ pre-commit:
 
 pre-push:
   jobs:
+    - name: build
+      run: |
+        if echo {push_files} | grep -qE '\.(ts|tsx|js|jsx|json|jsonc|toml)$'; then
+          bun run build
+        fi
+
     - name: biome-ci
       run: |
         if echo {push_files} | grep -qE '\.(css|html|json|jsonc|grit|code-workspace|js|jsx|ts|tsx)$'; then
@@ -76,7 +82,6 @@ pre-push:
       run: |
         if echo {push_files} | grep -qE '\.(js|jsx|ts|tsx)$'; then
           bun run build:oxc --minify
-          bun run build
           bun run oxc .
         fi
 
@@ -95,6 +100,6 @@ pre-push:
     - name: test
       run: |
         if echo {push_files} | grep -qE '\.(ts|tsx|js|jsx|json|jsonc|toml)$'; then
-          bun run test
+          bun run vitest run
         fi
   parallel: true

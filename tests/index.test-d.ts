@@ -20,7 +20,7 @@ interface RootArraySecondaryOption {
 	readonly enabled?: boolean;
 }
 
-interface RefinedRefOption {
+interface RefinedReferenceOption {
 	readonly enabled: boolean;
 	readonly mode: "loose" | "strict";
 }
@@ -80,7 +80,7 @@ test("InferSchemaType resolves local refs and composition", () => {
 		oneOf: [{ enum: ["strict", "loose"], type: "string" }, { type: "integer" }],
 	} as const satisfies RuleSchema;
 
-	expectTypeOf<InferSchemaType<typeof referencedSchema>>().toEqualTypeOf<RefinedRefOption>();
+	expectTypeOf<InferSchemaType<typeof referencedSchema>>().toEqualTypeOf<RefinedReferenceOption>();
 	expectTypeOf<InferSchemaType<typeof branchingSchema>>().toEqualTypeOf<"loose" | "strict" | number>();
 }, 1000);
 
