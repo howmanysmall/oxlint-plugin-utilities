@@ -55,22 +55,46 @@ pre-commit:
         tombi lint {staged_files}
         tombi format {staged_files}
       stage_fixed: true
+
+    - glob:
+        - "*.yaml"
+        - "*.yml"
+      name: yaml-format
+      run: bun run format {staged_files}
+      stage_fixed: true
   parallel: true
 
 pre-push:
   jobs:
     - name: biome-ci
-      run: bun run biome:ci
+      run: |
+        if echo {push_files} | grep -qE '\.(css|html|json|jsonc|grit|code-workspace|js|jsx|ts|tsx)$'; then
+          bun run biome:ci
+        fi
 
     - name: oxc
-      run: bun run oxc .
+      run: |
+        if echo {push_files} | grep -qE '\.(js|jsx|ts|tsx)$'; then
+          bun run build:oxc --minify
+          bun run build
+          bun run oxc .
+        fi
 
     - name: type-check
-      run: bun run type-check
+      run: |
+        if echo {push_files} | grep -qE '\.(ts|tsx|js|jsx|json|jsonc)$'; then
+          bun run type-check
+        fi
 
     - name: knip
-      run: bun run knip
+      run: |
+        if echo {push_files} | grep -qE '\.(ts|tsx|js|jsx|json|jsonc|toml)$'; then
+          bun run knip
+        fi
 
-    - name: build
-      run: bun run build
+    - name: test
+      run: |
+        if echo {push_files} | grep -qE '\.(ts|tsx|js|jsx|json|jsonc|toml)$'; then
+          bun run test
+        fi
   parallel: true
