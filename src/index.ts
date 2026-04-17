@@ -1,6 +1,9 @@
 export { definePlugin } from "./define-plugin";
 export { defineRule } from "./define-rule";
 
+// oxlint-disable-next-line capitalized-comments
+// declare function isRecord(value: unknown): value is Record<string, unknown>;`
+
 export type {
 	Context,
 	CreateOnceRule,
@@ -14,12 +17,12 @@ export type {
 	Rule,
 	RuleArraySchema,
 	RuleMeta,
+	RuleObjectSchema,
 	RuleOptions,
 	RuleSchema,
 	RuleSchemaDefinition,
 	RuleSchemaTypeName,
 	RuleSchemaValue,
-	RuleObjectSchema,
 } from "./types";
 
 export type {

@@ -23,7 +23,7 @@
 		"tests/fixtures/**/*.d.ts",
 		".context/**",
 	],
-	"jsPlugins": [],
+	"jsPlugins": ["./plugins/oxc/small-rules.js"],
 	"options": {
 		"denyWarnings": true,
 		"maxWarnings": 0,
@@ -69,7 +69,7 @@
 				"vitest/prefer-expect-type-of": "error",
 				"vitest/prefer-import-in-mock": "error",
 				"vitest/prefer-importing-vitest-globals": "error",
-				"vitest/prefer-strict-boolean-matchers": "error",
+				"vitest/prefer-strict-boolean-matchers": "off",
 				"vitest/prefer-to-be-falsy": "error",
 				"vitest/prefer-to-be-object": "error",
 				"vitest/prefer-to-be-truthy": "error",
@@ -176,7 +176,7 @@
 		"no-array-constructor": "off",
 		"no-async-promise-executor": "error",
 		"no-await-in-loop": "error",
-		"no-bitwise": "error",
+		"no-bitwise": "off",
 		"no-case-declarations": "error",
 		"no-class-assign": "error",
 		"no-compare-neg-zero": "error",
@@ -275,6 +275,8 @@
 		// This rule sucks man wtf
 		"promise/prefer-await-to-callbacks": "off",
 		"require-yield": "error",
+		"small-rules/no-commented-code": "error",
+		"small-rules/prevent-abbreviations": "error",
 		"sort-imports": [
 			"error",
 			{

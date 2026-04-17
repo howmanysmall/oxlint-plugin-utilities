@@ -1,6 +1,7 @@
 {
 	"compilerOptions": {
 		"noEmit": true,
+		"noUncheckedIndexedAccess": true,
 		"rootDir": ".",
 		"types": ["bun", "node", "vitest/globals"],
 	},

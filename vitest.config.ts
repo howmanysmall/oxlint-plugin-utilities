@@ -2,6 +2,9 @@ import { defineConfig } from "vitest/config";
 
 const configuration = defineConfig({
 	test: {
+		benchmark: {
+			include: ["tests/**/*.bench.ts"],
+		},
 		coverage: {
 			enabled: true,
 			exclude: ["dist", "node_modules", "scripts", "tests", "**/*.d.ts"],
