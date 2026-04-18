@@ -34,7 +34,7 @@
 		"plugins": [],
 		"pretty": true,
 		"resolveJsonModule": true,
-		"rootDir": "./plugins/oxc",
+		"rootDir": ".",
 		"skipLibCheck": true,
 		"sourceMap": false,
 		"strict": true,
@@ -48,5 +48,5 @@
 		"verbatimModuleSyntax": true,
 	},
 	"exclude": ["**/node_modules/**"],
-	"include": ["./plugins/oxc/**/*.ts"],
+	"include": ["./plugins/**/*.ts", "./src/**/*.ts"],
 }

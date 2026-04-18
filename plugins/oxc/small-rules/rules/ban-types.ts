@@ -1,7 +1,8 @@
-import { defineRule } from "../../../../src/index";
+import { defineRule } from "#src";
+
 import { isRecord, isStringArray, isStringRecord } from "../utilities/type-utilities";
 
-import type { ESTree, Visitor } from "../../../../src/index";
+import type { ESTree, Visitor } from "#src";
 
 interface BanTypesOptions {
 	readonly bannedTypes?: ReadonlyArray<string> | Record<string, string>;

@@ -86,7 +86,7 @@
 	"plugins": ["eslint", "import", "jsdoc", "node", "oxc", "promise", "typescript", "unicorn"],
 	"rules": {
 		"arrow-body-style": ["error", "as-needed"],
-		"complexity": "error",
+		"complexity": ["error", { "max": 20 }],
 		"curly": ["error", "multi-line"],
 		"default-case": "off",
 		"eqeqeq": "error",
