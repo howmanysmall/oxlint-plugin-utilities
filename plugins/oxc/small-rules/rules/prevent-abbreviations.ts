@@ -1,5 +1,3 @@
-import { defineRule } from "#src";
-
 import {
 	hasName,
 	isIdentifierName,
@@ -7,20 +5,20 @@ import {
 	isPropertyNode,
 	isStringLiteral,
 	isVariableDeclarator,
-} from "../utilities/ast-utilities";
+} from "@utilities/ast-utilities";
 import {
 	ANOTHER_NAME_MESSAGE,
 	MESSAGE_ID_REPLACE,
 	MESSAGE_ID_SUGGESTION,
-} from "../utilities/prevent-abbreviations/constants";
-import { isValidIdentifier } from "../utilities/prevent-abbreviations/identifier";
+} from "@utilities/prevent-abbreviations/constants";
+import { isValidIdentifier } from "@utilities/prevent-abbreviations/identifier";
 import {
 	getMessage,
 	getNameReplacements,
 	isDiscouragedReplacementName,
 	isUpperFirst,
 	prepareOptions,
-} from "../utilities/prevent-abbreviations/replacements";
+} from "@utilities/prevent-abbreviations/replacements";
 import {
 	getAvailableVariableName,
 	getScopes,
@@ -33,11 +31,13 @@ import {
 	shouldCheckImport,
 	shouldFix,
 	shouldReportIdentifierAsProperty,
-} from "../utilities/prevent-abbreviations/scope";
+} from "@utilities/prevent-abbreviations/scope";
+
+import { defineRule } from "#src";
+
+import type { IsSafe, MessageIds, PreparedOptions, VariableLike } from "@utilities/prevent-abbreviations/types";
 
 import type { Definition, Diagnostic, ESTree, Fix, Fixer, Scope, Variable, Visitor } from "#src";
-
-import type { IsSafe, MessageIds, PreparedOptions, VariableLike } from "../utilities/prevent-abbreviations/types";
 
 function createIsSafeGeneratedName(scopeToNamesGeneratedByFixer: WeakMap<Scope, Set<string>>): IsSafe {
 	return (name, scopes) =>

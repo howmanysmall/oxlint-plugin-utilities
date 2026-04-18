@@ -11,12 +11,12 @@ import { bold, cyan, gray, green, magenta, red, yellow } from "picocolors";
 import prettyBytes from "pretty-bytes";
 import prettyMilliseconds from "pretty-ms";
 
-import type { BuildArtifact } from "bun";
+import type { BuildArtifact, BuildConfig } from "bun";
 
 const scriptPath = import.meta.path;
 const scriptName = basename(scriptPath, extname(scriptPath));
 const entryPoints: ReadonlyArray<string> = ["./plugins/oxc/small-rules/index.ts"];
-const externalPackages: ReadonlyArray<string> = ["@oxlint/plugins", "type-fest"];
+const externalPackages: ReadonlyArray<string> = ["oxc-parser"];
 const javaScriptOutputPath = resolve("plugins/oxc/small-rules.js");
 const sourceMapOutputPath = resolve("plugins/oxc/small-rules.js.map");
 const pluginTypeScriptConfigurationPath = "./tsconfig.plugins.json";
@@ -24,7 +24,7 @@ const pluginTypeScriptConfigurationPath = "./tsconfig.plugins.json";
 interface BuildOptions {
 	readonly clean: boolean;
 	readonly minify: boolean;
-	readonly sourceMap: boolean;
+	readonly sourcemap: boolean;
 	readonly verbose: boolean;
 }
 
@@ -41,8 +41,8 @@ interface BuildResult {
 
 type BuildRelatedMessage = BuildMessage | ResolveMessage;
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-	return typeof value === "object" && value !== null;
+function isRecord(object: unknown): object is Record<string, unknown> {
+	return typeof object === "object" && object !== null && !Array.isArray(object);
 }
 
 function isValidMessageLevel(level: unknown): level is BuildMessage["level"] {
@@ -62,42 +62,36 @@ function isBuildPosition(position: unknown): position is BuildMessage["position"
 	);
 }
 
-function isBuildMessage(value: unknown): value is BuildMessage {
+function isBuildMessage(object: unknown): object is BuildMessage {
 	return (
-		isRecord(value) &&
-		value.name === "BuildMessage" &&
-		typeof value.message === "string" &&
-		isValidMessageLevel(value.level) &&
-		isBuildPosition(value.position)
+		isRecord(object) &&
+		object.name === "BuildMessage" &&
+		typeof object.message === "string" &&
+		isValidMessageLevel(object.level) &&
+		isBuildPosition(object.position)
 	);
 }
 
-function isResolveMessage(value: unknown): value is ResolveMessage {
+function isResolveMessage(object: unknown): object is ResolveMessage {
 	return (
-		isRecord(value) &&
-		value.name === "ResolveMessage" &&
-		typeof value.code === "string" &&
-		typeof value.importKind === "string" &&
-		typeof value.message === "string" &&
-		isValidMessageLevel(value.level) &&
-		isBuildPosition(value.position) &&
-		typeof value.referrer === "string" &&
-		typeof value.specifier === "string"
+		isRecord(object) &&
+		object.name === "ResolveMessage" &&
+		typeof object.code === "string" &&
+		typeof object.importKind === "string" &&
+		typeof object.message === "string" &&
+		isValidMessageLevel(object.level) &&
+		isBuildPosition(object.position) &&
+		typeof object.referrer === "string" &&
+		typeof object.specifier === "string"
 	);
 }
 
-function isBuildRelatedMessage(value: unknown): value is BuildRelatedMessage {
-	return isBuildMessage(value) || isResolveMessage(value);
+function isBuildRelatedMessage(object: unknown): object is BuildRelatedMessage {
+	return isBuildMessage(object) || isResolveMessage(object);
 }
 
-interface JavaScriptMinifyConfiguration {
-	readonly identifiers: boolean;
-	readonly syntax: boolean;
-	readonly whitespace: boolean;
-}
-
-function getJavaScriptMinifyConfiguration(minify: boolean): boolean | JavaScriptMinifyConfiguration {
-	return minify || { identifiers: false, syntax: true, whitespace: true };
+function getJavaScriptMinifyConfiguration(minify: boolean): NonNullable<BuildConfig["minify"]> {
+	return minify || { identifiers: false, keepNames: false, syntax: true, whitespace: true };
 }
 
 function getJavaScriptMinifyLabel(minify: boolean): string {
@@ -144,8 +138,7 @@ function getUnexpectedArtifactPaths(
 	let size = 0;
 
 	for (const output of outputs) {
-		if (output.kind === "entry-point") continue;
-		if (sourceMapEnabled && output.kind === "sourcemap") continue;
+		if (output.kind === "entry-point" || (sourceMapEnabled && output.kind === "sourcemap")) continue;
 		unexpectedArtifactPaths[size++] = output.path;
 	}
 
@@ -234,7 +227,7 @@ async function runBuildAsync(options: BuildOptions): Promise<BuildResult> {
 			console.start("Building with ..");
 			console.info(`  Entry points: ${cyan(entryPoints.join(", "))}`);
 			console.info(`  Minify: ${getJavaScriptMinifyLabel(options.minify)}`);
-			console.info(`  Sourcemap: ${options.sourceMap ? green("yes") : gray("no")}`);
+			console.info(`  Sourcemap: ${options.sourcemap ? green("yes") : gray("no")}`);
 			console.info(`  TypeScript config: ${cyan(pluginTypeScriptConfigurationPath)}`);
 			console.info(`  Output file: ${cyan(javaScriptOutputPath)}`);
 		}
@@ -244,9 +237,9 @@ async function runBuildAsync(options: BuildOptions): Promise<BuildResult> {
 			external: [...externalPackages],
 			format: "esm",
 			minify: getJavaScriptMinifyConfiguration(options.minify),
-			packages: "external",
+			packages: "bundle",
 			plugins: [],
-			sourcemap: options.sourceMap ? "external" : "none",
+			sourcemap: options.sourcemap ? "external" : "none",
 			target: "node",
 			throw: false,
 			tsconfig: pluginTypeScriptConfigurationPath,
@@ -261,7 +254,7 @@ async function runBuildAsync(options: BuildOptions): Promise<BuildResult> {
 			};
 		}
 
-		const files = await writeBuildOutputsAsync(buildResult.outputs, options.sourceMap);
+		const files = await writeBuildOutputsAsync(buildResult.outputs, options.sourcemap);
 		const duration = (nanoseconds() - startTime) / 1_000_000;
 
 		return { duration, files, success: true };
@@ -290,9 +283,11 @@ function printBuildSummary(buildResult: BuildResult, verbose: boolean): void {
 		return;
 	}
 
-	const javaScriptFiles = buildResult.files.filter(({ path }) => path.endsWith(".js"));
-	const sourceMapFiles = buildResult.files.filter(({ path }) => path.endsWith(".js.map"));
-	const totalSize = buildResult.files.reduce((sum, { size }) => sum + size, 0);
+	const { files } = buildResult;
+
+	const javaScriptFiles = files.filter(({ path }) => path.endsWith(".js"));
+	const sourceMapFiles = files.filter(({ path }) => path.endsWith(".js.map"));
+	const totalSize = files.reduce((sum, { size }) => sum + size, 0);
 
 	console.log("");
 	console.success(green(bold("Build completed successfully!")));
@@ -300,7 +295,7 @@ function printBuildSummary(buildResult: BuildResult, verbose: boolean): void {
 
 	if (verbose) {
 		console.info(bold("Output files:"));
-		for (const { path, size } of buildResult.files) {
+		for (const { path, size } of files) {
 			const color = path.endsWith(".js.map") ? gray : cyan;
 			const bytes = gray(`(${prettyBytes(size)})`);
 			console.log(`  ${color(path)} ${bytes}`);
@@ -380,10 +375,10 @@ async function validateTypesAsync(verbose: boolean): Promise<void> {
 
 					const displayLine = sourceLine.replaceAll("	", "    ");
 					const tabCount = (sourceLine.slice(0, columnNumber - 1).match(/\t/g) ?? []).length;
-					const displayCol = columnNumber - 1 + tabCount * 3;
+					const displayColumn = columnNumber - 1 + tabCount * 3;
 
 					console.log(`${gray(lineNumberString)} | ${displayLine}`);
-					const padding = " ".repeat(lineNumberString.length + 3 + displayCol);
+					const padding = " ".repeat(lineNumberString.length + 3 + displayColumn);
 					console.log(`${padding}${red("^")}`);
 				} catch {
 					// Ignore read errors
@@ -420,12 +415,7 @@ const command = new Command()
 
 		await validateTypesAsync(verbose);
 
-		const buildResult = await runBuildAsync({
-			clean,
-			minify,
-			sourceMap: sourcemap,
-			verbose,
-		});
+		const buildResult = await runBuildAsync({ clean, minify, sourcemap, verbose });
 		printBuildSummary(buildResult, verbose);
 
 		if (!buildResult.success) exit(1);

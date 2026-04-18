@@ -1,6 +1,6 @@
-import { defineRule } from "#src";
+import { isRecord, isStringArray, isStringRecord } from "@utilities/type-utilities";
 
-import { isRecord, isStringArray, isStringRecord } from "../utilities/type-utilities";
+import { defineRule } from "#src";
 
 import type { ESTree, Visitor } from "#src";
 

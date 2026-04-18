@@ -324,10 +324,15 @@
 						"functionLikeReturnTypes": { "enabled": true },
 						"parameterNames": {
 							"enabled": "none",
-							"suppressWhenArgumentMatchesName": false
+							"suppressWhenArgumentMatchesName": true
 						},
-						"parameterTypes": { "enabled": false },
-						"propertyDeclarationTypes": { "enabled": true }
+						"parameterTypes": { "enabled": true },
+						"propertyDeclarationTypes": { "enabled": false },
+						"variableTypes": { "enabled": false }
+					},
+					"preferences": {
+						"includePackageJsonAutoImports": "on",
+						"preferTypeOnlyAutoImports": true
 					},
 					"updateImportsOnFileMove": { "enabled": "always" }
 				},
@@ -337,12 +342,16 @@
 						"functionLikeReturnTypes": { "enabled": true },
 						"parameterNames": {
 							"enabled": "none",
-							"suppressWhenArgumentMatchesName": false
+							"suppressWhenArgumentMatchesName": true
 						},
 						"parameterTypes": { "enabled": true },
-						"propertyDeclarationTypes": { "enabled": false }
+						"propertyDeclarationTypes": { "enabled": false },
+						"variableTypes": { "enabled": false }
 					},
-					"preferences": { "includePackageJsonAutoImports": "on" },
+					"preferences": {
+						"includePackageJsonAutoImports": "on",
+						"preferTypeOnlyAutoImports": true
+					},
 					"updateImportsOnFileMove": { "enabled": "always" }
 				}
 			}

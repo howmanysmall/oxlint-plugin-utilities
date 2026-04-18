@@ -1,11 +1,10 @@
 import { extname } from "node:path";
+import { hasCodeLines } from "@utilities/recognizers/code-recognizer";
+import { createJavaScriptDetectors } from "@utilities/recognizers/javascript-footprint";
+import { isRecord } from "@utilities/type-utilities";
 import { parseSync } from "oxc-parser";
 
 import { defineRule } from "#src";
-
-import { hasCodeLines } from "../utilities/recognizers/code-recognizer";
-import { createJavaScriptDetectors } from "../utilities/recognizers/javascript-footprint";
-import { isRecord } from "../utilities/type-utilities";
 
 import type { Comment, ESTree, Fix, SourceCode, Visitor } from "#src";
 
