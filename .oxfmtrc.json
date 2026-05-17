@@ -14,6 +14,7 @@
 		".context/**",
 		"!package.json",
 		"!.zed/settings.json",
+		"aube-lock.yaml",
 	],
 	"insertFinalNewline": true,
 	"jsdoc": true,
