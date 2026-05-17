@@ -1,0 +1,71 @@
+name: Validate Package
+description: Run package validation checks and optionally upload dist
+
+inputs:
+  artifact-name:
+    description: Build artifact name
+    required: false
+    default: dist
+  check-biome:
+    description: Run Biome CI
+    required: false
+    default: "false"
+  check-knip:
+    description: Run Knip
+    required: false
+    default: "false"
+  lint-command:
+    description: Lint command to run
+    required: false
+    default: aube run lint
+  upload-artifact:
+    description: Upload dist as an artifact
+    required: false
+    default: "false"
+
+runs:
+  using: composite
+  steps:
+    - name: Biome CI
+      if: inputs.check-biome == 'true'
+      shell: bash
+      run: aube run biome ci
+
+    - name: Build
+      shell: bash
+      run: aube run build
+
+    - name: Lint
+      shell: bash
+      run: ${{ inputs.lint-command }}
+
+    - name: Type Checking
+      shell: bash
+      run: aube run type-check
+
+    - name: Knip
+      if: inputs.check-knip == 'true'
+      shell: bash
+      run: aube run knip
+
+    - name: Assert build artifacts exist
+      shell: bash
+      run: |
+        if [ ! -d dist ]; then
+          echo "::error title=Missing output::dist directory not found" >&2
+          exit 1
+        fi
+        if [ ! -f dist/index.js ]; then
+          echo "::error title=Missing artifact::dist/index.js not found" >&2
+          ls -R dist || true
+          exit 1
+        fi
+        echo "Build artifacts OK"
+
+    - name: Upload build artifacts
+      if: inputs.upload-artifact == 'true'
+      uses: actions/upload-artifact@v7
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: dist/
+        retention-days: 1
