@@ -1,7 +1,7 @@
 import type { Detector } from "./detector";
 
-const WHITESPACE_GLOBAL_REGEX = /\s+/g;
-const ESCAPE = /[-/^$*+?.()|[\]{}]/g;
+const WHITESPACE_GLOBAL_REGEX = /\s+/gu;
+const ESCAPE = /[-/^$*+?.()|[\]{}]/gu;
 
 function escapeForRegex(value: string): string {
 	return value.replaceAll(ESCAPE, String.raw`\$&`);
@@ -17,7 +17,7 @@ function escapeForRegex(value: string): string {
  */
 export function createContainsDetector(probability: number, patterns: ReadonlyArray<RegExp | string>): Detector {
 	const compiledPatterns = patterns.map((pattern) =>
-		typeof pattern === "string" ? new RegExp(escapeForRegex(pattern), "g") : new RegExp(pattern.source, "g"),
+		typeof pattern === "string" ? new RegExp(escapeForRegex(pattern), "gu") : new RegExp(pattern.source, "gu"),
 	);
 
 	return {

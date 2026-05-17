@@ -11,10 +11,12 @@ interface Edit {
 }
 
 const JSDOC_BEFORE_DECLARATION =
-	/(?<comment>\/\*\*[\s\S]*?\*\/)\s*\n\s*(?:export\s+)?(?:async\s+)?(?:function|const|let|var|class)\s+(?<name>\w+)/gu;
+	/(?<comment>\/\*\*[\s\S]*?\*\/)(?:\s*\n\s*\/\/[^\n]*)*\s*\n\s*(?:export\s+)?(?:async\s+)?(?:function|const|let|var|class)\s+(?<name>\w+)/gu;
 const TYPESCRIPT_FILE_REGEXP = /\.tsx?$/u;
 const IGNORED_SOURCE_REGEXP = /(?:^|\/)(?:node_modules|dist|tests)\/|(?:\.d|\.test|\.test-d|\.spec)\.ts$/u;
+const TRAILING_JSDOC_REGEXP = /\/\*\*[\s\S]*?\*\/\s*$/u;
 const REGEXP_REGEXP = /[.*+?^${}()|[\]\\]/gu;
+const WHITESPACE_REGEXP = /\s+/gu;
 
 function escapeRegExp(value: string): string {
 	return value.replaceAll(REGEXP_REGEXP, String.raw`\$&`);
@@ -71,6 +73,28 @@ function getStoredComments(code: string): ReadonlyMap<string, string> {
 	return storedComments;
 }
 
+function getDeclarationNames(code: string, exportedName: string): ReadonlyArray<string> {
+	const names = new Set([exportedName]);
+	const exportAliasPattern = new RegExp(
+		`\\b(?<local>[A-Za-z_$][\\w$]*)\\s+as\\s+${escapeRegExp(exportedName)}\\b`,
+		"u",
+	);
+	const exportAliasMatch = exportAliasPattern.exec(code);
+	const local = exportAliasMatch?.groups?.local;
+	if (local !== undefined) names.add(local);
+
+	return [...names];
+}
+
+function normalizeComment(comment: string): string {
+	return comment.replaceAll(WHITESPACE_REGEXP, " ").trim();
+}
+
+function hasExistingComment(code: string, index: number, comment: string): boolean {
+	const existingComment = TRAILING_JSDOC_REGEXP.exec(code.slice(0, index))?.[0];
+	return existingComment !== undefined && normalizeComment(existingComment) === normalizeComment(comment);
+}
+
 function restoreComments(code: string, storedComments: ReadonlyMap<string, string>): string {
 	if (storedComments.size === 0) return code;
 
@@ -78,15 +102,21 @@ function restoreComments(code: string, storedComments: ReadonlyMap<string, strin
 	const edits = new Array<Edit>();
 
 	for (const [name, comment] of storedComments) {
-		const pattern = new RegExp(
-			`([ \\t]*)((?:export\\s+)?(?:default\\s+)?(?:async\\s+)?(?:function|const|let|var|class)\\s+${escapeRegExp(name)})\\b`,
-			"u",
-		);
-		const match = pattern.exec(code);
+		let match: RegExpExecArray | undefined;
+		for (const declarationName of getDeclarationNames(code, name)) {
+			const pattern = new RegExp(
+				`([ \\t]*)((?:export\\s+)?(?:default\\s+)?(?:async\\s+)?(?:function|const|let|var|class)\\s+${escapeRegExp(declarationName)})\\b`,
+				"u",
+			);
+			match = pattern.exec(code) ?? undefined;
+			if (match) break;
+		}
 		if (!match) continue;
 
 		const [, indent, declaration] = match;
 		if (indent === undefined || declaration === undefined) continue;
+
+		if (hasExistingComment(code, match.index, comment)) continue;
 
 		const reindented = getReindentedComment(reindentCache, comment, indent);
 		const prefix = match.index > 0 && code[match.index - 1] !== "\n" ? "\n" : "";
@@ -113,13 +143,15 @@ export function createPreserveCommentsPlugin({ enabled }: PreserveCommentsOption
 	const storedComments = new Map<string, string>();
 
 	return {
-		name: "preserve-comments",
-		renderChunk(code: string, chunk: Rolldown.RenderedChunk): string | undefined {
-			if (!enabled || storedComments.size === 0) return undefined;
-			if (!chunk.fileName.endsWith(".js")) return undefined;
+		generateBundle(_outputOptions, bundle: Rolldown.OutputBundle) {
+			if (!enabled || storedComments.size === 0) return;
 
-			return restoreComments(code, storedComments);
+			for (const assetOrChunk of Object.values(bundle)) {
+				if (assetOrChunk.type !== "chunk" || !assetOrChunk.fileName.endsWith(".js")) continue;
+				assetOrChunk.code = restoreComments(assetOrChunk.code, storedComments);
+			}
 		},
+		name: "preserve-comments",
 		transform(code: string, id: string) {
 			if (!enabled || !shouldExtractComments(id)) return;
 

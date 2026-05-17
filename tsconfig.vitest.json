@@ -2,8 +2,12 @@
 	"compilerOptions": {
 		"noEmit": true,
 		"noUncheckedIndexedAccess": true,
+		"paths": {
+			"#src": ["./src/index.ts"],
+			"#src/*": ["./src/*"],
+		},
 		"rootDir": ".",
-		"types": ["bun", "node", "vitest/globals"],
+		"types": ["node", "vitest/globals"],
 	},
 	"exclude": ["dist", "node_modules"],
 	"extends": "./tsconfig.base.json",

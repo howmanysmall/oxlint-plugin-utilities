@@ -4,10 +4,6 @@ import { defineRule } from "#src";
 
 import type { ESTree, Visitor } from "#src";
 
-interface BanTypesOptions {
-	readonly bannedTypes?: ReadonlyArray<string> | Record<string, string>;
-}
-
 interface BannedTypeEntry {
 	readonly originalName: string;
 	readonly replacementName?: string | undefined;
@@ -17,12 +13,12 @@ const DEFAULT_BANNED_TYPES = new Map<string, BannedTypeEntry>([
 	["omit", { originalName: "Omit", replacementName: "Except" }],
 ]);
 
-function normalizeBannedTypes(options: BanTypesOptions): ReadonlyMap<string, BannedTypeEntry> {
+function normalizeBannedTypes(rawOptions: unknown): ReadonlyMap<string, BannedTypeEntry> {
 	const bannedTypes = new Map(DEFAULT_BANNED_TYPES);
 
-	if (!isRecord(options) || !("bannedTypes" in options)) return bannedTypes;
+	if (!isRecord(rawOptions) || !("bannedTypes" in rawOptions)) return bannedTypes;
 
-	const { bannedTypes: configuredBannedTypes } = options;
+	const { bannedTypes: configuredBannedTypes } = rawOptions;
 	if (configuredBannedTypes === undefined) return bannedTypes;
 
 	if (isStringArray(configuredBannedTypes)) {
@@ -49,7 +45,9 @@ function getReferencedTypeName(typeNameNode: ESTree.TSTypeName): string | undefi
 
 const banTypes = defineRule({
 	create(context): Visitor {
-		const bannedTypes = normalizeBannedTypes(context.options[0]);
+		const [rawOptions] = context.options;
+
+		const bannedTypes = normalizeBannedTypes(rawOptions);
 		if (bannedTypes.size === 0) return {} satisfies Visitor;
 
 		return {

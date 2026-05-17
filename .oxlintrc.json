@@ -57,6 +57,7 @@
 			"files": ["tests/**/*"],
 			"plugins": ["eslint", "import", "jsdoc", "node", "oxc", "promise", "typescript", "unicorn", "vitest"],
 			"rules": {
+				"max-lines-per-function": "off",
 				"vitest/consistent-each-for": "error",
 				"vitest/consistent-test-filename": "error",
 				"vitest/consistent-test-it": "error",
@@ -128,6 +129,13 @@
 				"vitest/valid-expect-in-promise": "error",
 				"vitest/valid-title": "error",
 				"vitest/warn-todo": "error",
+			},
+		},
+		{
+			"files": ["tests/**/*.test-d.ts"],
+			"plugins": ["eslint", "import", "jsdoc", "node", "oxc", "promise", "typescript", "unicorn", "vitest"],
+			"rules": {
+				"vitest/prefer-expect-assertions": "off",
 			},
 		},
 	],

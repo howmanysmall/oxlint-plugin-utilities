@@ -97,7 +97,7 @@ export const DEFAULT_ALLOW_LIST: Record<string, boolean> = {
 
 export const DEFAULT_IGNORE = ["i18n", "l10n"];
 
-export const WORD_SPLIT_PATTERN = /(?=[A-Z])|(?<=[_.-])/;
+export const WORD_SPLIT_PATTERN = /(?=[A-Z])|(?<=[_.-])/u;
 
 export const TYPESCRIPT_RESERVED_WORDS = new Set([
 	"any",
@@ -162,4 +162,4 @@ export const TYPESCRIPT_RESERVED_WORDS = new Set([
 	"yield",
 ]);
 
-export const IS_ALPHABETIC = /^[A-Za-z]+$/;
+export const IS_ALPHABETIC = /^[A-Za-z]+$/u;

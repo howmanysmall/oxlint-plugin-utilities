@@ -1,69 +1,105 @@
-import { expectTypeOf, test } from "vitest";
+import { describe, expectTypeOf, it } from "vitest";
 
 import { defineRule } from "../dist/index";
 
 import type { InferContextFromRule, InferOptionsFromSchema, RuleSchemaDefinition } from "../dist/index";
 
-test("dist declarations expose the schema-driven rule surface", () => {
-	const schema = {
-		additionalItems: {
-			enum: ["warn", "error"],
-			type: "string",
-		},
-		items: [
-			{ type: "string" },
+interface DefaultedRuntimeOption {
+	readonly springHooks?: ReadonlyArray<string>;
+	readonly staticGlobalFactories: ReadonlyArray<string>;
+	readonly treatEmptyDepsAsViolation: boolean;
+}
+
+describe("built index exports", () => {
+	it("dist declarations keep schema inference but make runtime slots sound", () => {
+		const objectSchema = [
 			{
+				additionalProperties: false,
 				properties: {
-					enabled: { type: "boolean" },
+					springHooks: {
+						items: { type: "string" },
+						type: "array",
+					},
+					staticGlobalFactories: {
+						default: ["makeSpring"],
+						items: { type: "string" },
+						type: "array",
+					},
+					treatEmptyDepsAsViolation: {
+						default: true,
+						type: "boolean",
+					},
 				},
 				type: "object",
 			},
-		],
-		type: "array",
-	} as const satisfies RuleSchemaDefinition;
+		] as const satisfies RuleSchemaDefinition;
 
-	const rule = defineRule({
-		create(context) {
-			const [name, options, ...levels] = context.options;
+		const objectRule = defineRule({
+			create(context) {
+				const [options] = context.options;
 
-			void name;
-			void options;
-			void levels;
-
-			return {};
-		},
-		meta: {
-			defaultOptions: ["demo", {}],
-			messages: {
-				invalidName: "Name is invalid.",
+				expectTypeOf(options).toEqualTypeOf<DefaultedRuntimeOption | undefined>();
+				return {};
 			},
-			schema,
-		},
-	});
+			meta: {
+				messages: {
+					unexpected: "Unexpected static hook.",
+				},
+				schema: objectSchema,
+			},
+		});
+		type ObjectContext = InferContextFromRule<typeof objectRule>;
 
-	type RuleContext = InferContextFromRule<typeof rule>;
-	type RuleOptions = InferOptionsFromSchema<typeof schema>;
+		expectTypeOf<ObjectContext["options"]>().toEqualTypeOf<readonly [DefaultedRuntimeOption | undefined]>();
+		expectTypeOf<InferOptionsFromSchema<typeof objectSchema>>().toEqualTypeOf<
+			readonly [
+				{
+					readonly springHooks?: ReadonlyArray<string>;
+					readonly staticGlobalFactories?: ReadonlyArray<string>;
+					readonly treatEmptyDepsAsViolation?: boolean;
+				},
+			]
+		>();
 
-	expectTypeOf<RuleContext["options"]>().toEqualTypeOf<
-		readonly [string, { readonly enabled?: boolean }, ...ReadonlyArray<"error" | "warn">]
-	>();
-	expectTypeOf<RuleOptions>().toEqualTypeOf<
-		readonly [string, { readonly enabled?: boolean }, ...ReadonlyArray<"error" | "warn">]
-	>();
+		const arraySchema = {
+			additionalItems: {
+				enum: ["warn", "error"],
+				type: "string",
+			},
+			items: [
+				{ type: "string" },
+				{
+					properties: {
+						enabled: { type: "boolean" },
+					},
+					type: "object",
+				},
+			],
+			type: "array",
+		} as const satisfies RuleSchemaDefinition;
 
-	defineRule({
-		create() {
-			return {};
-		},
-		meta: {
-			// @ts-expect-error invalid defaults must fail through the published declarations
-			defaultOptions: [1, {}],
-			schema: {
-				items: [{ type: "string" }],
-				type: "array",
-			} as const satisfies RuleSchemaDefinition,
-		},
-	});
+		const arrayRule = defineRule({
+			create(context) {
+				const [name, options, ...levels] = context.options;
 
-	void rule;
-}, 1000);
+				expectTypeOf(name).toEqualTypeOf<string>();
+				expectTypeOf(options).toEqualTypeOf<{ readonly enabled?: boolean } | undefined>();
+				expectTypeOf(levels).toEqualTypeOf<Array<"error" | "warn">>();
+
+				return {};
+			},
+			meta: {
+				defaultOptions: ["demo"],
+				messages: {
+					invalidName: "Name is invalid.",
+				},
+				schema: arraySchema,
+			},
+		});
+		type ArrayContext = InferContextFromRule<typeof arrayRule>;
+
+		expectTypeOf<ArrayContext["options"]>().toEqualTypeOf<
+			readonly [string, { readonly enabled?: boolean } | undefined, ...ReadonlyArray<"error" | "warn">]
+		>();
+	}, 1000);
+});

@@ -8,8 +8,12 @@ on:
       - "src/**/*.ts"
       - "tests/**/*.ts"
       - "scripts/**/*.ts"
+      - ".github/actions/**/*.yaml"
       - "package.json"
-      - "bun.lock"
+      - "aube-lock.yaml"
+      - "aube-workspace.yaml"
+      - "mise.lock"
+      - "mise.toml"
       - "knip.ts"
       - "tsconfig*.json"
       - "vitest.config.ts"
@@ -20,8 +24,12 @@ on:
       - "src/**/*.ts"
       - "tests/**/*.ts"
       - "scripts/**/*.ts"
+      - ".github/actions/**/*.yaml"
       - "package.json"
-      - "bun.lock"
+      - "aube-lock.yaml"
+      - "aube-workspace.yaml"
+      - "mise.lock"
+      - "mise.toml"
       - "knip.ts"
       - "tsconfig*.json"
       - "vitest.config.ts"
@@ -35,52 +43,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Setup Rokit
-        uses: CompeyDev/setup-rokit@v0.1.2
+      - name: Setup build environment
+        uses: ./.github/actions/setup
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - name: Validate package
+        uses: ./.github/actions/validate-package
         with:
-          bun-version: latest
-
-      - name: Cache Bun dependencies
-        uses: actions/cache@v5
-        with:
-          path: ~/.bun/install/cache
-          key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-bun-
-
-      - name: Install
-        run: bun ci
-
-      - name: Biome CI
-        run: bun run biome:ci
-
-      - name: Build
-        run: bun run build
-
-      - name: Lint
-        run: bun run oxc .
-
-      - name: Type Checking
-        run: bun run type-check
-
-      - name: Knip
-        run: bun run knip
-
-      - name: Assert build artifacts exist
-        run: |
-          if [ ! -d dist ]; then
-            echo "::error title=Missing output::dist directory not found" >&2
-            exit 1
-          fi
-          if [ ! -f dist/index.js ]; then
-            echo "::error title=Missing artifact::dist/index.js not found" >&2
-            ls -R dist || true
-            exit 1
-          fi
-          echo "Build artifacts OK"
+          check-biome: "true"
+          check-knip: "true"
+          lint-command: aube run oxc .
 
       - name: Tests
-        run: bun run test
+        run: aube run test

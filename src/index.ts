@@ -5,6 +5,7 @@ export type {
 	Context,
 	CreateOnceRule,
 	CreateRule,
+	DefaultOptionsFromSchema,
 	Diagnostic,
 	InferContextFromRule,
 	InferOptionsFromSchema,

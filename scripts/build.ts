@@ -1,319 +1,123 @@
-#!/usr/bin/env bun
+#!/usr/bin/env jiti
 
-import { createHash } from "node:crypto";
-import { existsSync } from "node:fs";
-import { mkdir, readdir, rm, stat } from "node:fs/promises";
+import { mkdtemp, readdir, readFile, rm, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { basename, dirname, extname, resolve } from "node:path";
-import { arch, cwd, exit, platform } from "node:process";
-import { Command } from "@jsr/cliffy__command";
-import { $, argv, build, file, fileURLToPath, Glob, nanoseconds, write } from "bun";
-import console from "consola";
-import { bold, cyan, gray, green, magenta, red, yellow } from "picocolors";
+import { basename, extname, resolve } from "node:path";
+import { performance } from "node:perf_hooks";
+import { argv, exit } from "node:process";
+import { Command } from "@cliffy/command";
+import { type } from "arktype";
+import { consola } from "consola";
 import prettyBytes from "pretty-bytes";
 import prettyMilliseconds from "pretty-ms";
+import { build } from "tsdown";
+import { bold, cyan, gray, green, magenta, red, yellow } from "yoctocolors";
+import { $ } from "zx";
 
-import {
-	getStaleDeclarationSupportPaths,
-	normalizeDeclarationSupportPaths,
-} from "./utilities/declaration-support-cache";
+import { createBuildMetadataPlugin } from "./plugins/build/build-metadata";
+import { createPreserveCommentsPlugin } from "./plugins/build/preserve-comments";
 
-const scriptPath = import.meta.path;
-const SCRIPT_NAME = basename(scriptPath, extname(scriptPath));
-const CRITICAL_FILES = ["dist/index.js", "dist/index.d.ts"];
-const DECLARATION_CACHE_KEY = createHash("sha1").update(cwd()).digest("hex").slice(0, 12);
-const DECLARATION_CACHE_DIRECTORY = resolve(tmpdir(), `${SCRIPT_NAME}-${DECLARATION_CACHE_KEY}`);
-const DECLARATION_CACHE_MANIFEST_PATH = resolve(DECLARATION_CACHE_DIRECTORY, "support-manifest.json");
-const DECLARATION_CACHE_OUTPUT_DIRECTORY = resolve(DECLARATION_CACHE_DIRECTORY, "out");
-const DECLARATION_CACHE_BUILD_INFO_PATH = resolve(DECLARATION_CACHE_DIRECTORY, "tsgo.tsbuildinfo");
-type BuildRelatedMessage = BuildMessage | ResolveMessage;
-
-interface ShellError {
-	readonly exitCode: number;
-	readonly message: string;
-	readonly stderr: Uint8Array;
-	readonly stdout: Uint8Array;
-}
-
-function isBuildMessage(object: unknown): object is BuildMessage {
-	return (
-		isRecord(object) &&
-		object.name === "BuildMessage" &&
-		typeof object.message === "string" &&
-		isValidMessageLevel(object.level) &&
-		isBuildPosition(object.position)
-	);
-}
-function isResolveMessage(object: unknown): object is ResolveMessage {
-	return (
-		isRecord(object) &&
-		object.name === "ResolveMessage" &&
-		typeof object.code === "string" &&
-		typeof object.importKind === "string" &&
-		typeof object.message === "string" &&
-		isValidMessageLevel(object.level) &&
-		isBuildPosition(object.position) &&
-		typeof object.referrer === "string" &&
-		typeof object.specifier === "string"
-	);
-}
-function isBuildRelatedMessage(object: unknown): object is BuildRelatedMessage {
-	return isBuildMessage(object) || isResolveMessage(object);
-}
-function isShellError(object: unknown): object is ShellError {
-	return (
-		isRecord(object) &&
-		typeof object.exitCode === "number" &&
-		Number.isInteger(object.exitCode) &&
-		typeof object.message === "string" &&
-		object.stderr instanceof Uint8Array &&
-		object.stdout instanceof Uint8Array
-	);
-}
-
-function isBuildPosition(position: unknown): position is BuildMessage["position"] {
-	return (
-		position === null ||
-		(isRecord(position) &&
-			typeof position.column === "number" &&
-			typeof position.file === "string" &&
-			typeof position.length === "number" &&
-			typeof position.line === "number" &&
-			typeof position.lineText === "string" &&
-			typeof position.namespace === "string")
-	);
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-	return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function isValidMessageLevel(level: unknown): level is BuildMessage["level"] {
-	return level === "error" || level === "warning" || level === "info" || level === "debug" || level === "verbose";
-}
-
-const DIST_DIRECTORY = resolve(".", "dist");
-const ENTRY_POINTS = ["./src/index.ts"];
-const SOURCE_DIRECTORY = resolve(".", "src");
-const EXTERNAL_PACKAGES = [
-	"@typescript-eslint/utils",
-	"@typescript-eslint/parser",
-	"@typescript-eslint/types",
-	"eslint",
-	"typescript",
-	"oxfmt",
-	"oxc-resolver",
-	"oxc-parser",
-];
+const scriptPath = import.meta.filename;
+const scriptName = basename(scriptPath, extname(scriptPath));
+const distributionDirectory = "dist";
+const distributionDirectoryPath = resolve(distributionDirectory);
+const typeScriptConfigurationPath = "./tsconfig.json";
+const packageJsonPath = resolve("package.json");
+const requiredOutputFiles: ReadonlyArray<string> = ["dist/index.js", "dist/index.d.ts"];
+const forbiddenPackedPathPrefixes: ReadonlyArray<string> = ["src/", "scripts/", "tests/"];
+const npmMetadataFiles = new Set(["package.json", "README.md", "LICENSE"]);
 
 interface BuildOptions {
 	readonly clean: boolean;
 	readonly minify: boolean;
-	readonly silent: boolean;
+	readonly packageChecks: boolean;
 	readonly sourcemap: boolean;
 	readonly verbose: boolean;
 }
+
+const isPackageJson = type({
+	"+": "ignore",
+	"dependencies?": type("Record<string, string>").readonly().or("undefined | null"),
+	"devDependencies?": type("Record<string, string>").readonly().or("undefined | null"),
+	"exports?": "unknown | undefined | null",
+	"files?": type("string[]").readonly().or("undefined | null"),
+	"main?": "string | undefined | null",
+	"module?": "string | undefined | null",
+	"name?": "string | undefined | null",
+	"optionalDependencies?": type("Record<string, string>").readonly().or("undefined | null"),
+	"peerDependencies?": type("Record<string, string>").readonly().or("undefined | null"),
+	"types?": "string | undefined | null",
+	"version?": "string | undefined | null",
+}).readonly();
+type PackageJson = typeof isPackageJson.infer;
 
 interface OutputFile {
 	readonly path: string;
 	readonly size: number;
 }
+
+const isAubePackJsonFileEntry = type({ path: "string" }).readonly();
+const isAubePackJsonEntry = type({
+	"+": "ignore",
+	filename: "string",
+	files: isAubePackJsonFileEntry.array().readonly(),
+	name: "string",
+	version: "string.semver",
+}).readonly();
+
+const isAubePackJsonOutput = isAubePackJsonEntry.array().atLeastLength(1).readonly();
+type AubePackJsonOutput = typeof isAubePackJsonOutput.infer;
+
 interface BuildResult {
 	readonly duration: number;
 	readonly files: ReadonlyArray<OutputFile>;
 	readonly success: boolean;
 }
 
-function getJavaScriptMinifyConfiguration(minify: boolean):
-	| boolean
-	| {
-			readonly identifiers: boolean;
-			readonly syntax: boolean;
-			readonly whitespace: boolean;
-	  } {
-	if (minify) return { identifiers: true, syntax: true, whitespace: true };
-
-	return {
-		identifiers: false,
-		syntax: true,
-		whitespace: true,
-	};
+function getBooleanString(boolean: boolean): string {
+	return boolean ? green("yes") : gray("no");
 }
 
-function getJavaScriptMinifyLabel(minify: boolean): string {
-	return minify ? green("full") : cyan("syntax+whitespace");
+const NORMALIZE_REGEXP = /^\.\//u;
+function normalizePublishedPath(path: string): string {
+	return path.replace(NORMALIZE_REGEXP, "");
 }
 
-function formatBuildMessage({ position, message }: BuildRelatedMessage): string {
-	const parts = new Array<string>();
-	let size = 0;
-
-	if (position) {
-		const { line, column, lineText, length } = position;
-		const relativePath = position.file.replace(`${cwd()}/`, "");
-
-		parts[size++] = `${cyan(relativePath)}:${yellow(String(line))}:${yellow(String(column))}`;
-		parts[size++] = `${gray(String(line))} | ${lineText}`;
-
-		const padding = " ".repeat(String(line).length + 3 + column - 1);
-		const underline = "^".repeat(Math.max(1, length));
-		parts[size++] = `${padding}${red(underline)}`;
-	}
-
-	parts[size] = `${red("error:")} ${message}`;
-	return parts.join("\n");
+function isRecord(value: unknown): value is Record<string, unknown> {
+	return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function getTsgoExecutablePath(): string {
-	const platformPackageName = `@typescript/native-preview-${platform}-${arch}`;
-	const packageJsonUrl = import.meta.resolve(`${platformPackageName}/package.json`);
-	const packageJsonPath = fileURLToPath(packageJsonUrl);
-	const executablePath = resolve(dirname(packageJsonPath), "lib", platform === "win32" ? "tsgo.exe" : "tsgo");
-
-	if (!existsSync(executablePath)) {
-		const error = new Error(`TypeScript Native executable not found: ${executablePath}`);
-		Error.captureStackTrace(error, getTsgoExecutablePath);
+async function readPackageJsonAsync(): Promise<PackageJson> {
+	const result = isPackageJson(JSON.parse(await readFile(packageJsonPath, "utf8")));
+	if (result instanceof type.errors) {
+		const error = new TypeError(`package.json has invalid shape: ${result.summary}`);
+		Error.captureStackTrace(error, readPackageJsonAsync);
 		throw error;
 	}
+	return result;
+}
 
-	return executablePath;
+function getProductionDependencyNames(packageJson: PackageJson): ReadonlyArray<string> {
+	return [
+		...Object.keys(packageJson.dependencies ?? {}),
+		...Object.keys(packageJson.peerDependencies ?? {}),
+		...Object.keys(packageJson.optionalDependencies ?? {}),
+	].toSorted((left, right) => left.localeCompare(right));
+}
+
+async function removeAsync(filePath: string, verbose: boolean): Promise<void> {
+	try {
+		await stat(filePath);
+	} catch {
+		return;
+	}
+
+	if (verbose) consola.info(`Removing ${cyan(filePath)}...`);
+	await rm(filePath, { recursive: true });
 }
 
 async function cleanOutputDirectoryAsync(verbose: boolean): Promise<void> {
-	if (existsSync(DIST_DIRECTORY)) {
-		if (verbose) console.info(`Removing ${cyan(DIST_DIRECTORY)}...`);
-		await rm(DIST_DIRECTORY, { recursive: true });
-	}
-}
-
-function createDeclarationEmitFlags(outputDirectory: string, buildInfoPath: string): Array<string> {
-	return [
-		"--allowJs",
-		"false",
-		"--declaration",
-		"--emitDeclarationOnly",
-		"--exactOptionalPropertyTypes",
-		"--forceConsistentCasingInFileNames",
-		"--isolatedModules",
-		"--lib",
-		"ES2023",
-		"--module",
-		"ES2022",
-		"--moduleDetection",
-		"force",
-		"--moduleResolution",
-		"Bundler",
-		"--incremental",
-		"--noFallthroughCasesInSwitch",
-		"--noImplicitAny",
-		"--noImplicitOverride",
-		"--noImplicitReturns",
-		"--noImplicitThis",
-		"--noUncheckedIndexedAccess",
-		"--noUncheckedSideEffectImports",
-		"--noUnusedLocals",
-		"--noUnusedParameters",
-		"--outDir",
-		outputDirectory,
-		"--resolveJsonModule",
-		"false",
-		"--rootDir",
-		"src",
-		"--skipLibCheck",
-		"--strict",
-		"--target",
-		"es2023",
-		"--tsBuildInfoFile",
-		buildInfoPath,
-		"--types",
-		"bun,node",
-		"--useUnknownInCatchVariables",
-		"--verbatimModuleSyntax",
-		"--declarationMap",
-		"false",
-		"--sourceMap",
-		"false",
-	];
-}
-
-const DECLARATION_GLOB = new Glob("**/*.d.ts");
-function getSourceDeclarationRelativePaths(sourceDirectory: string): ReadonlyArray<string> {
-	return normalizeDeclarationSupportPaths([...DECLARATION_GLOB.scanSync({ cwd: sourceDirectory, onlyFiles: true })]);
-}
-
-async function readDeclarationSupportManifestAsync(manifestPath: string): Promise<ReadonlyArray<string>> {
-	const manifestFile = file(manifestPath);
-	const exists = await manifestFile.exists();
-	if (!exists) return [];
-
-	try {
-		const manifest: unknown = await manifestFile.json();
-		if (!Array.isArray(manifest) || !manifest.every((entry) => typeof entry === "string")) return [];
-		return normalizeDeclarationSupportPaths(manifest);
-	} catch {
-		return [];
-	}
-}
-
-async function syncSourceDeclarationFilesAsync(
-	sourceDirectory: string,
-	targetDirectory: string,
-	manifestPath: string,
-): Promise<void> {
-	const relativePaths = getSourceDeclarationRelativePaths(sourceDirectory);
-	const previousPaths = await readDeclarationSupportManifestAsync(manifestPath);
-	const stalePaths = getStaleDeclarationSupportPaths(previousPaths, relativePaths);
-
-	await Promise.all(
-		stalePaths.map(async (relativePath): Promise<void> => {
-			await rm(resolve(targetDirectory, relativePath), { force: true });
-		}),
-	);
-
-	await Promise.all(
-		relativePaths.map(async (relativePath): Promise<void> => {
-			await write(resolve(targetDirectory, relativePath), file(resolve(sourceDirectory, relativePath)), {
-				createPath: true,
-			});
-		}),
-	);
-
-	await write(manifestPath, JSON.stringify(relativePaths), { createPath: true });
-}
-
-async function generateBundledDeclarationsAsync(verbose: boolean): Promise<void> {
-	const tsgoExecutablePath = getTsgoExecutablePath();
-	const declarationBundlerPromise = import("./utilities/declaration-bundler");
-
-	await mkdir(DECLARATION_CACHE_OUTPUT_DIRECTORY, { recursive: true });
-
-	const flags = createDeclarationEmitFlags(DECLARATION_CACHE_OUTPUT_DIRECTORY, DECLARATION_CACHE_BUILD_INFO_PATH);
-	if (verbose) console.log(`Calling ${cyan("tsgo")} ${flags.join(" ")}`);
-
-	await $`${tsgoExecutablePath} ${flags}`.quiet();
-	await syncSourceDeclarationFilesAsync(
-		SOURCE_DIRECTORY,
-		DECLARATION_CACHE_OUTPUT_DIRECTORY,
-		DECLARATION_CACHE_MANIFEST_PATH,
-	);
-
-	const { bundleDeclarationEntryPoint, createDeclarationBundlerProgram } = await declarationBundlerPromise;
-	const bundledEntrypoints = [{ entryFileName: "index.d.ts", outputFileName: resolve(DIST_DIRECTORY, "index.d.ts") }];
-	const program = createDeclarationBundlerProgram({
-		entryFilePaths: bundledEntrypoints.map(({ entryFileName }) =>
-			resolve(DECLARATION_CACHE_OUTPUT_DIRECTORY, entryFileName),
-		),
-	});
-
-	await Promise.all(
-		bundledEntrypoints.map(async ({ entryFileName, outputFileName }): Promise<void> => {
-			const bundledDeclaration = bundleDeclarationEntryPoint({
-				entryFilePath: resolve(DECLARATION_CACHE_OUTPUT_DIRECTORY, entryFileName),
-				program,
-			});
-			await write(outputFileName, bundledDeclaration);
-		}),
-	);
+	await removeAsync(distributionDirectoryPath, verbose);
 }
 
 async function getOutputFilesAsync(directory: string): Promise<ReadonlyArray<OutputFile>> {
@@ -321,184 +125,314 @@ async function getOutputFilesAsync(directory: string): Promise<ReadonlyArray<Out
 
 	async function walk(walkDirectory: string): Promise<ReadonlyArray<OutputFile>> {
 		const entries = await readdir(walkDirectory, { withFileTypes: true });
-		const results: ReadonlyArray<ReadonlyArray<OutputFile>> = await Promise.all(
+		const results = await Promise.all(
 			entries.map(async (entry): Promise<ReadonlyArray<OutputFile>> => {
 				const fullPath = resolve(walkDirectory, entry.name);
 				if (entry.isDirectory()) return walk(fullPath);
-				if (entry.isFile()) {
-					const stats = await stat(fullPath);
-					return [
-						{
-							path: fullPath.replace(`${resolvedDirectory}/`, ""),
-							size: stats.size,
-						},
-					];
-				}
-				return [];
+				if (!entry.isFile()) return [];
+
+				const fileStatistics = await stat(fullPath);
+				return [
+					{
+						path: fullPath.replace(`${resolvedDirectory}/`, `${directory}/`),
+						size: fileStatistics.size,
+					},
+				];
 			}),
 		);
+
 		return results.flat();
 	}
 
 	const files = await walk(directory);
-	return [...files].toSorted((left, right) => left.path.localeCompare(right.path));
+	return files.toSorted((left, right) => left.path.localeCompare(right.path));
 }
 
-async function runBuildAsync(options: BuildOptions): Promise<BuildResult> {
-	const startTime = nanoseconds();
+async function assertFileExistsAsync(path: string): Promise<void> {
+	try {
+		const fileStatistics = await stat(path);
+		if (fileStatistics.isFile()) return;
+	} catch {
+		// The shared message below is clearer than the filesystem error.
+	}
+
+	const error = new Error(`Required package file is missing: ${path}`);
+	Error.captureStackTrace(error, assertFileExistsAsync);
+	throw error;
+}
+
+async function validateReferencedPackageFilesAsync(packageJson: PackageJson, verbose: boolean): Promise<void> {
+	if (verbose) consola.start("Validating package metadata...");
+
+	const referencedFiles = new Set<string>();
+	if (typeof packageJson.main === "string" && packageJson.main.length > 0) referencedFiles.add(packageJson.main);
+	if (typeof packageJson.types === "string" && packageJson.types.length > 0) referencedFiles.add(packageJson.types);
+
+	const rootExport = isRecord(packageJson.exports) ? packageJson.exports["."] : undefined;
+	if (typeof rootExport === "string") referencedFiles.add(rootExport);
+	else if (isRecord(rootExport)) {
+		for (const value of Object.values(rootExport)) {
+			if (typeof value === "string") referencedFiles.add(value);
+		}
+	}
+
+	await Promise.all(
+		[...referencedFiles].map(async (filePath) => assertFileExistsAsync(normalizePublishedPath(filePath))),
+	);
+
+	if (verbose) consola.success("Package metadata references existing files");
+}
+
+function getPackTarballPath(packDirectory: string, packEntries: AubePackJsonOutput): string {
+	const [packEntry] = packEntries;
+	if (!packEntry || typeof packEntry.filename !== "string") {
+		const error = new Error("aube pack did not report a generated tarball");
+		Error.captureStackTrace(error, getPackTarballPath);
+		throw error;
+	}
+
+	return resolve(packDirectory, packEntry.filename);
+}
+
+function getPackedFilePaths(packEntries: AubePackJsonOutput): ReadonlyArray<string> {
+	const [packEntry] = packEntries;
+	if (!packEntry) {
+		const error = new Error("aube pack did not report any entries");
+		Error.captureStackTrace(error, getPackedFilePaths);
+		throw error;
+	}
+
+	const result = isAubePackJsonEntry(packEntry);
+	if (result instanceof type.errors) {
+		const error = new TypeError(`Invalid pack entry format: ${result.summary}`);
+		Error.captureStackTrace(error, getPackedFilePaths);
+		throw error;
+	}
+
+	return result.files.map(({ path }) => normalizePublishedPath(path));
+}
+
+function validatePackedFiles(packedFiles: ReadonlyArray<string>): void {
+	for (const requiredOutputFile of requiredOutputFiles) {
+		if (!packedFiles.includes(requiredOutputFile)) {
+			const error = new Error(`Packed tarball is missing ${requiredOutputFile}`);
+			Error.captureStackTrace(error, validatePackedFiles);
+			throw error;
+		}
+	}
+
+	for (const packedFile of packedFiles) {
+		if (forbiddenPackedPathPrefixes.some((prefix) => packedFile.startsWith(prefix))) {
+			const error = new Error(`Packed tarball includes unpublished source path: ${packedFile}`);
+			Error.captureStackTrace(error, validatePackedFiles);
+			throw error;
+		}
+
+		if (!packedFile.startsWith(`${distributionDirectory}/`) && !npmMetadataFiles.has(packedFile)) {
+			const error = new Error(`Packed tarball includes unexpected file: ${packedFile}`);
+			Error.captureStackTrace(error, validatePackedFiles);
+			throw error;
+		}
+	}
+}
+
+async function runPublicationChecksAsync(verbose: boolean): Promise<void> {
+	if (verbose) consola.start("Packing package smoke tarball...");
+	const packDirectory = await mkdtemp(resolve(tmpdir(), "oxlint-plugin-utilities-pack-"));
 
 	try {
-		if (options.clean) {
-			if (options.verbose) console.start("Cleaning dist directory...");
-			await cleanOutputDirectoryAsync(options.verbose);
-			if (options.verbose) console.success("Cleaned dist directory");
+		const packOutput = isAubePackJsonOutput(
+			await $`aube pack --json --ignore-scripts --pack-destination ${packDirectory}`.quiet().json(),
+		);
+		if (packOutput instanceof type.errors) {
+			const error = new TypeError(`aube pack reported an unexpected JSON shape: ${packOutput.summary}`);
+			Error.captureStackTrace(error, runPublicationChecksAsync);
+			throw error;
 		}
 
-		if (options.verbose) {
-			console.start("Building with Bun ...");
-			console.info(`  Entry points: ${cyan(ENTRY_POINTS.join(", "))}`);
-			console.info(`  Minify: ${getJavaScriptMinifyLabel(options.minify)}`);
-			console.info(`  Sourcemap: ${options.sourcemap ? green("yes") : gray("no")}`);
-			console.info(`  Declarations: ${cyan("custom bundle")}`);
+		const packedFiles = getPackedFilePaths(packOutput);
+		validatePackedFiles(packedFiles);
+		const tarballPath = getPackTarballPath(packDirectory, packOutput);
+
+		if (verbose) {
+			consola.success(`Packed ${cyan(tarballPath)}`);
+			consola.start("Running publint...");
+		}
+		await $`aube run publint run ${tarballPath}`.quiet();
+
+		if (verbose) consola.start("Running arethetypeswrong...");
+		await $`aube run attw ${tarballPath} --profile esm-only`.quiet();
+
+		if (verbose) consola.success("Package checks passed");
+	} finally {
+		await rm(packDirectory, { force: true, recursive: true });
+	}
+}
+
+async function validateTypesAsync(verbose: boolean): Promise<void> {
+	if (verbose) consola.start("Validating types...");
+	const startTime = performance.now();
+	const typeCheck = await $`aube run type-check --project ${typeScriptConfigurationPath}`.quiet().nothrow();
+	const duration = performance.now() - startTime;
+
+	if (typeCheck.exitCode === 0) {
+		if (verbose) consola.success(`Types validated in ${prettyMilliseconds(duration)}`);
+		return;
+	}
+
+	const stdout = typeCheck.stdout.trim();
+	const stderr = typeCheck.stderr.trim();
+	consola.fail(red(`Type validation failed in ${prettyMilliseconds(duration)}`));
+	if (stdout) consola.log(stdout);
+	if (stderr) consola.error(stderr);
+
+	const error = new Error("Type validation failed");
+	Error.captureStackTrace(error, validateTypesAsync);
+	throw error;
+}
+
+async function runBuildAsync(buildOptions: BuildOptions): Promise<BuildResult> {
+	const startTime = performance.now();
+
+	try {
+		if (buildOptions.clean) {
+			if (buildOptions.verbose) consola.start("Cleaning dist directory...");
+			await cleanOutputDirectoryAsync(buildOptions.verbose);
+			if (buildOptions.verbose) consola.success("Cleaned dist directory");
 		}
 
-		const declarationBuildPromise = generateBundledDeclarationsAsync(options.verbose);
-		const { buildMetadata } = await import("./plugins/bun/build-metadata");
-		const { createPreserveCommentsPlugin } = await import("./plugins/bun/preserve-comments");
-		const preserveComments = createPreserveCommentsPlugin({ outputDirectory: DIST_DIRECTORY });
+		const packageJson = await readPackageJsonAsync();
+		const neverBundle = getProductionDependencyNames(packageJson);
+		const version = packageJson.version ?? "0.0.0";
 
-		const [buildResult] = await Promise.all([
-			build({
-				entrypoints: [...ENTRY_POINTS],
-				external: [...EXTERNAL_PACKAGES],
-				format: "esm",
-				minify: getJavaScriptMinifyConfiguration(options.minify),
-				outdir: DIST_DIRECTORY,
-				packages: "external",
-				plugins: [buildMetadata, preserveComments],
-				sourcemap: options.sourcemap ? "external" : "none",
-				target: "node",
-				tsconfig: "./tsconfig.json",
-			}),
-			declarationBuildPromise,
-		]);
-
-		if (!buildResult.success) {
-			for (const log of buildResult.logs) console.error(formatBuildMessage(log));
-			return {
-				duration: (nanoseconds() - startTime) / 1_000_000,
-				files: [],
-				success: false,
-			};
+		if (buildOptions.verbose) {
+			consola.start("Building with tsdown...");
+			consola.info(`  Entry point: ${cyan("./src/index.ts")}`);
+			consola.info(`  Minify: ${getBooleanString(buildOptions.minify)}`);
+			consola.info(`  Sourcemap: ${getBooleanString(buildOptions.sourcemap)}`);
+			consola.info(`  Declarations: ${getBooleanString(true)}`);
+			consola.info(`  Output directory: ${cyan(distributionDirectory)}`);
+			if (neverBundle.length > 0) consola.info(`  Never bundle: ${cyan(neverBundle.join(", "))}`);
 		}
 
-		if (options.verbose) console.success("Bun build completed");
-		if (options.verbose) console.success("Type declarations generated");
+		await build({
+			clean: false,
+			deps: { neverBundle: [...neverBundle] },
+			dts: {
+				compilerOptions: {
+					declarationMap: buildOptions.sourcemap,
+				},
+				sourcemap: buildOptions.sourcemap,
+			},
+			entry: { index: "./src/index.ts" },
+			fixedExtension: false,
+			format: ["esm"],
+			logLevel: buildOptions.verbose ? "info" : "silent",
+			minify: buildOptions.minify,
+			outDir: distributionDirectory,
+			outputOptions: {
+				comments: {
+					annotation: true,
+					jsdoc: true,
+					legal: true,
+				},
+			},
+			platform: "node",
+			plugins: [createBuildMetadataPlugin({ version }), createPreserveCommentsPlugin({ enabled: true })],
+			sourcemap: buildOptions.sourcemap,
+			tsconfig: typeScriptConfigurationPath,
+		});
 
-		for (const criticalFile of CRITICAL_FILES) {
-			if (!existsSync(criticalFile)) {
-				console.error(`Critical file missing: ${red(criticalFile)}`);
-				return {
-					duration: (nanoseconds() - startTime) / 1_000_000,
-					files: [],
-					success: false,
-				};
-			}
-		}
+		await Promise.all(requiredOutputFiles.map(async (filePath) => assertFileExistsAsync(filePath)));
 
-		const outputFiles = await getOutputFilesAsync(DIST_DIRECTORY);
-		const duration = (nanoseconds() - startTime) / 1_000_000;
+		await validateReferencedPackageFilesAsync(packageJson, buildOptions.verbose);
 
-		return { duration, files: outputFiles, success: true };
+		if (buildOptions.packageChecks) await runPublicationChecksAsync(buildOptions.verbose);
+
+		const files = await getOutputFilesAsync(distributionDirectory);
+		return {
+			duration: performance.now() - startTime,
+			files,
+			success: true,
+		};
 	} catch (error) {
-		if (error instanceof AggregateError) {
-			for (const aggregateError of error.errors) {
-				if (isBuildRelatedMessage(aggregateError)) console.error(formatBuildMessage(aggregateError));
-				else console.error(`${red("error:")} ${String(aggregateError)}`);
-			}
-		} else if (isShellError(error)) {
-			console.error(`${red("error:")} Command failed with exit code ${error.exitCode}`);
-			const stderr = Buffer.from(error.stderr).toString().trim();
-			const stdout = Buffer.from(error.stdout).toString().trim();
-			if (stderr.length > 0) console.error(stderr);
-			if (stdout.length > 0) console.log(stdout);
-		} else {
-			const message = error instanceof Error ? error.message : String(error);
-			console.error(`${red("error:")} ${message}`);
-		}
+		const message = error instanceof Error ? error.message : String(error);
+		consola.error(`${red("error:")} ${message}`);
 
 		return {
-			duration: (nanoseconds() - startTime) / 1_000_000,
+			duration: performance.now() - startTime,
 			files: [],
 			success: false,
 		};
 	}
 }
 
-function printBuildSummary({ files, duration, success }: BuildResult, verbose: boolean, silent: boolean): void {
-	if (!success) {
-		if (!silent) console.fail(red(`Build failed in ${prettyMilliseconds(duration)}`));
+function printBuildSummary(buildResult: BuildResult, verbose: boolean): void {
+	if (!buildResult.success) {
+		consola.fail(red(`Build failed in ${prettyMilliseconds(buildResult.duration)}`));
 		return;
 	}
 
-	const jsFiles = files.filter(({ path }) => path.endsWith(".js"));
-	const dtsFiles = files.filter(({ path }) => path.endsWith(".d.ts"));
-	const mapFiles = files.filter(({ path }) => path.endsWith(".js.map"));
-	const totalSize = files.reduce((sum, { size }) => sum + size, 0);
+	const { files } = buildResult;
+	let javaScriptFiles = 0;
+	let declarationFiles = 0;
+	let sourceMapFiles = 0;
+	let totalSize = 0;
 
-	if (!silent) {
-		console.log("");
-		console.success(green(bold("Build completed successfully!")));
-		console.log("");
+	for (const { path, size } of files) {
+		totalSize += size;
+		if (path.endsWith(".js")) javaScriptFiles += 1;
+		else if (path.endsWith(".d.ts")) declarationFiles += 1;
+		else if (path.endsWith(".js.map")) sourceMapFiles += 1;
 	}
+
+	consola.log("");
+	consola.success(green(bold("Build completed successfully!")));
+	consola.log("");
 
 	if (verbose) {
-		console.info(bold("Output files:"));
+		consola.info(bold("Output files:"));
 		for (const { path, size } of files) {
-			const color = path.endsWith(".js") ? cyan : path.endsWith(".d.ts") ? yellow : gray;
-			console.log(`  ${color(path)} ${gray(`(${prettyBytes(size)})`)}`);
+			const color = path.endsWith(".js.map") ? gray : path.endsWith(".d.ts") ? yellow : cyan;
+			consola.log(`  ${color(path)} ${gray(`(${prettyBytes(size)})`)}`);
 		}
-		console.log("");
+		consola.log("");
 	}
 
-	console.info(bold("Summary:"));
-	console.log(`  ${cyan("JS:")} ${jsFiles.length} files`);
-	console.log(`  ${yellow("Declarations:")} ${dtsFiles.length} files`);
-	if (mapFiles.length > 0) console.log(`  ${gray("Sourcemaps:")} ${mapFiles.length} files`);
-	console.log(`  ${magenta("Total size:")} ${prettyBytes(totalSize)}`);
-	console.log(`  ${green("Duration:")} ${prettyMilliseconds(duration)}`);
-}
-
-try {
-	await cleanOutputDirectoryAsync(false);
-} catch {
-	// I do not care.
+	consola.info(bold("Summary:"));
+	consola.log(`  ${cyan("JS:")} ${javaScriptFiles} files`);
+	consola.log(`  ${yellow("Declarations:")} ${declarationFiles} files`);
+	if (sourceMapFiles > 0) consola.log(`  ${gray("Sourcemaps:")} ${sourceMapFiles} files`);
+	consola.log(`  ${magenta("Total size:")} ${prettyBytes(totalSize)}`);
+	consola.log(`  ${green("Duration:")} ${prettyMilliseconds(buildResult.duration)}`);
 }
 
 const command = new Command()
-	.name(SCRIPT_NAME)
-	.version("1.0.0")
-	.description("Build the ESLint plugin for distribution.")
+	.name(scriptName)
+	.version("2.0.0")
+	.description("Build the Node package for distribution.")
 	.option("--no-clean", "Skip cleaning dist/ before build", { default: true })
 	.option("-v, --verbose", "Show detailed build output", { default: false })
 	.option("-m, --minify", "Aggressively minify identifiers and syntax", { default: false })
-	.option("-s, --silent", "Suppress non-error output", { default: false })
+	.option("--package-checks", "Run aube pack, publint, and attw after building", { default: false })
 	.option("--sourcemap", "Generate sourcemaps", { default: false })
-	.action(async ({ clean, minify, silent, sourcemap, verbose }) => {
-		const options: BuildOptions = { clean, minify, silent, sourcemap, verbose };
-
+	.action(async ({ clean, minify, packageChecks, sourcemap, verbose }) => {
 		if (verbose) {
-			console.info(bold("Build configuration:"));
-			console.log(`  Clean: ${clean ? green("yes") : gray("no")}`);
-			console.log(`  Minify: ${getJavaScriptMinifyLabel(minify)}`);
-			console.log(`  Sourcemap: ${sourcemap ? green("yes") : gray("no")}`);
-			console.log("");
+			consola.info(bold("Build configuration:"));
+			consola.log(`  Clean: ${getBooleanString(clean)}`);
+			consola.log(`  Minify: ${getBooleanString(minify)}`);
+			consola.log(`  Package checks: ${getBooleanString(packageChecks)}`);
+			consola.log(`  Sourcemap: ${getBooleanString(sourcemap)}`);
+			consola.log("");
 		}
 
-		const result = await runBuildAsync(options);
-		printBuildSummary(result, verbose, silent);
+		await validateTypesAsync(verbose);
 
-		if (!result.success) exit(1);
+		const buildResult = await runBuildAsync({ clean, minify, packageChecks, sourcemap, verbose });
+		printBuildSummary(buildResult, verbose);
+
+		if (!buildResult.success) exit(1);
 	});
 
-await command.parse(argv.slice(2));
+const scriptIndex = argv.findIndex((argument) => resolve(argument) === import.meta.filename);
+await command.parse(argv.slice(scriptIndex + 1));

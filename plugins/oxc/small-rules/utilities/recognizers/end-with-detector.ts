@@ -1,6 +1,6 @@
 import type { Detector } from "./detector";
 
-const WHITESPACE_REGEX = /\s/;
+const WHITESPACE_REGEX = /\s/u;
 
 /**
  * Creates a detector for lines ending with specific characters. Scans backwards, skipping whitespace and comment

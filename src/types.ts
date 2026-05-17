@@ -1,4 +1,4 @@
-/* oxlint-disable eslint(max-lines) */
+/* oxlint-disable max-lines */
 
 import type {
 	Context as OxlintContext,
@@ -264,6 +264,15 @@ type InferObjectProperties<
 	}
 >;
 
+type SchemaDefaultKeys<TProperties extends RuleSchemaRecord> = Extract<
+	{
+		[TKey in Extract<keyof TProperties, string>]: TProperties[TKey] extends { readonly default: RuleSchemaValue }
+			? TKey
+			: never;
+	}[Extract<keyof TProperties, string>],
+	string
+>;
+
 type InferPatternPropertyValue<TSchema, TRootDefinitions extends SchemaDefinitions> = TSchema extends {
 	readonly patternProperties: infer TPatternProperties extends RuleSchemaRecord;
 }
@@ -373,14 +382,46 @@ type InferObjectSchema<TSchema, TRootDefinitions extends SchemaDefinitions> =
 			>
 		: Record<string, unknown>;
 
+type InferNormalizedObjectProperties<
+	TProperties extends RuleSchemaRecord,
+	TRequiredKeys extends string,
+	TRootDefinitions extends SchemaDefinitions,
+> = Simplify<
+	{
+		readonly [TKey in Extract<keyof TProperties, string> as TKey extends TRequiredKeys
+			? TKey
+			: never]-?: InferNormalizedSchemaType<TProperties[TKey], TRootDefinitions>;
+	} & {
+		readonly [TKey in Extract<keyof TProperties, string> as TKey extends TRequiredKeys
+			? never
+			: TKey]?: InferNormalizedSchemaType<TProperties[TKey], TRootDefinitions>;
+	}
+>;
+
 type InferSchemaTuple<TItems extends ReadonlyArray<RuleSchema>, TRootDefinitions extends SchemaDefinitions> = {
 	readonly [TIndex in keyof TItems]: InferSchemaType<TItems[TIndex], TRootDefinitions>;
+};
+
+type InferNormalizedSchemaTuple<
+	TItems extends ReadonlyArray<RuleSchema>,
+	TRootDefinitions extends SchemaDefinitions,
+> = {
+	readonly [TIndex in keyof TItems]: InferNormalizedSchemaType<TItems[TIndex], TRootDefinitions>;
 };
 
 type InferTupleRest<TAdditionalItems, TRootDefinitions extends SchemaDefinitions> = TAdditionalItems extends false
 	? readonly []
 	: TAdditionalItems extends RuleSchema
 		? ReadonlyArray<InferSchemaType<TAdditionalItems, TRootDefinitions>>
+		: ReadonlyArray<unknown>;
+
+type InferNormalizedTupleRest<
+	TAdditionalItems,
+	TRootDefinitions extends SchemaDefinitions,
+> = TAdditionalItems extends false
+	? readonly []
+	: TAdditionalItems extends RuleSchema
+		? ReadonlyArray<InferNormalizedSchemaType<TAdditionalItems, TRootDefinitions>>
 		: ReadonlyArray<unknown>;
 
 type InferTupleSchema<
@@ -403,6 +444,29 @@ type InferArraySchema<TSchema, TRootDefinitions extends SchemaDefinitions> = TSc
 		? ReadonlyArray<InferSchemaType<TItem, TRootDefinitions>>
 		: UnknownOptions;
 
+type InferNormalizedTupleSchema<
+	TItems extends ReadonlyArray<RuleSchema>,
+	TAdditionalItems,
+	TRootDefinitions extends SchemaDefinitions,
+> = TAdditionalItems extends false
+	? readonly [...InferNormalizedSchemaTuple<TItems, TRootDefinitions>]
+	: readonly [
+			...InferNormalizedSchemaTuple<TItems, TRootDefinitions>,
+			...InferNormalizedTupleRest<TAdditionalItems, TRootDefinitions>,
+		];
+
+type InferNormalizedArraySchema<TSchema, TRootDefinitions extends SchemaDefinitions> = TSchema extends {
+	readonly items: infer TItems extends ReadonlyArray<RuleSchema>;
+}
+	? InferNormalizedTupleSchema<
+			TItems,
+			TSchema extends { readonly additionalItems: infer TAdditionalItems } ? TAdditionalItems : undefined,
+			TRootDefinitions
+		>
+	: TSchema extends { readonly items: infer TItem extends RuleSchema }
+		? ReadonlyArray<InferNormalizedSchemaType<TItem, TRootDefinitions>>
+		: UnknownOptions;
+
 type InferDirectSchema<TSchema, TRootDefinitions extends SchemaDefinitions> = TSchema extends {
 	readonly enum: infer TEnum extends ReadonlyArray<unknown>;
 }
@@ -413,6 +477,40 @@ type InferDirectSchema<TSchema, TRootDefinitions extends SchemaDefinitions> = TS
 			? InferObjectSchema<TSchema, TRootDefinitions>
 			: TSchema extends { readonly items: unknown }
 				? InferArraySchema<TSchema, TRootDefinitions>
+				: unknown;
+
+type InferNormalizedObjectSchema<TSchema, TRootDefinitions extends SchemaDefinitions> =
+	SchemaPropertiesOf<TSchema> extends infer TProperties extends RuleSchemaRecord
+		? ApplyDependencies<
+				Simplify<
+					InferNormalizedObjectProperties<
+						TProperties,
+						SchemaRequiredKeys<TSchema, TProperties> | SchemaDefaultKeys<TProperties>,
+						TRootDefinitions
+					> &
+						InferObjectIndexSignature<TSchema, TProperties, TRootDefinitions>
+				>,
+				TSchema,
+				TRootDefinitions
+			>
+		: Record<string, unknown>;
+
+type InferNormalizedDirectSchema<TSchema, TRootDefinitions extends SchemaDefinitions> = TSchema extends {
+	readonly enum: infer TEnum extends ReadonlyArray<unknown>;
+}
+	? TEnum[number]
+	: TSchema extends { readonly type: infer TType }
+		? InferTypeSpecifier<TType, TSchema, TRootDefinitions> extends infer TInferred
+			? TSchema extends { readonly properties: unknown }
+				? InferNormalizedObjectSchema<TSchema, TRootDefinitions>
+				: TSchema extends { readonly items: unknown }
+					? InferNormalizedArraySchema<TSchema, TRootDefinitions>
+					: TInferred
+			: never
+		: TSchema extends { readonly properties: unknown }
+			? InferNormalizedObjectSchema<TSchema, TRootDefinitions>
+			: TSchema extends { readonly items: unknown }
+				? InferNormalizedArraySchema<TSchema, TRootDefinitions>
 				: unknown;
 
 type FiniteExclusion<TValue, TExcluded> =
@@ -443,15 +541,87 @@ export type InferSchemaType<
 		>
 	: unknown;
 
+/** Infers the runtime TypeScript type from a JSON Schema definition after schema defaults are applied. */
+type InferNormalizedSchemaType<
+	TSchema,
+	TRootDefinitions extends SchemaDefinitions = RootDefinitionsOf<TSchema>,
+> = TSchema extends RuleSchema
+	? SimplifyDeep<
+			ApplyNot<
+				InferReferenceBranch<TSchema, TRootDefinitions> &
+					InferNormalizedDirectSchema<TSchema, TRootDefinitions> &
+					InferAllOf<TSchema, TRootDefinitions> &
+					InferExtendsBranch<TSchema, TRootDefinitions> &
+					InferUnionBranches<TSchema, TRootDefinitions>,
+				TSchema extends { readonly not: infer TNot extends RuleSchema }
+					? InferNormalizedSchemaType<TNot, TRootDefinitions>
+					: never
+			>
+		>
+	: unknown;
+
 /** Infers the TypeScript type from a JSON Schema property definition. */
 export type InferSchemaPropertyType<
 	TSchema,
 	TRootDefinitions extends SchemaDefinitions = RootDefinitionsOf<TSchema>,
 > = InferSchemaType<TSchema, TRootDefinitions>;
 
-type InferSchemaTupleOptions<TSchema extends ReadonlyArray<RuleSchema>> = {
-	readonly [TIndex in keyof TSchema]: InferSchemaType<TSchema[TIndex], RootDefinitionsOf<TSchema[TIndex]>>;
-};
+type InferSchemaTupleOptions<TSchema extends ReadonlyArray<RuleSchema>> = TSchema extends readonly [
+	infer THead extends RuleSchema,
+	...infer TRest extends ReadonlyArray<RuleSchema>,
+]
+	? readonly [InferSchemaType<THead, RootDefinitionsOf<THead>>, ...InferSchemaTupleOptions<TRest>]
+	: readonly [];
+
+type InferNormalizedSchemaTupleOptions<TSchema extends ReadonlyArray<RuleSchema>> = TSchema extends readonly [
+	infer THead extends RuleSchema,
+	...infer TRest extends ReadonlyArray<RuleSchema>,
+]
+	? readonly [InferNormalizedSchemaType<THead, RootDefinitionsOf<THead>>, ...InferNormalizedSchemaTupleOptions<TRest>]
+	: readonly [];
+
+type EmptyTuple = readonly [];
+
+type EnsureTuple<TValue> = TValue extends ReadonlyArray<unknown> ? TValue : EmptyTuple;
+
+type ApplyRuntimeDefaults<
+	TSlots extends ReadonlyArray<unknown>,
+	TDefaults extends ReadonlyArray<unknown> = EmptyTuple,
+> = TSlots extends readonly [infer THead, ...infer TRest]
+	? TDefaults extends readonly [unknown, ...infer TDefaultRest]
+		? readonly [THead, ...ApplyRuntimeDefaults<TRest, TDefaultRest>]
+		: readonly [THead | undefined, ...ApplyRuntimeDefaults<TRest>]
+	: readonly [];
+
+type RuntimeOptionsFromSchemaAndDefaults<
+	TSchema extends RuleSchemaDefinition | undefined,
+	TDefaultOptions extends DefaultOptionsFromSchema<TSchema> | undefined,
+> = [TSchema] extends [undefined]
+	? EmptyOptions
+	: TSchema extends false
+		? UnknownOptions
+		: TSchema extends ReadonlyArray<RuleSchema>
+			? ApplyRuntimeDefaults<InferNormalizedSchemaTupleOptions<TSchema>, EnsureTuple<TDefaultOptions>>
+			: TSchema extends RuleArraySchema
+				? TSchema extends { readonly items: infer TItems extends ReadonlyArray<RuleSchema> }
+					? readonly [
+							...ApplyRuntimeDefaults<
+								InferNormalizedSchemaTuple<TItems, RootDefinitionsOf<TSchema>>,
+								EnsureTuple<TDefaultOptions>
+							>,
+							...InferNormalizedTupleRest<
+								TSchema extends { readonly additionalItems: infer TAdditionalItems }
+									? TAdditionalItems
+									: undefined,
+								RootDefinitionsOf<TSchema>
+							>,
+						]
+					: InferNormalizedArraySchema<TSchema, RootDefinitionsOf<TSchema>>
+				: TSchema extends RuleSchema
+					? TDefaultOptions extends readonly [unknown, ...ReadonlyArray<unknown>]
+						? readonly [InferNormalizedSchemaType<TSchema, RootDefinitionsOf<TSchema>>]
+						: readonly [InferNormalizedSchemaType<TSchema, RootDefinitionsOf<TSchema>> | undefined]
+					: UnknownOptions;
 
 /** Infers the options type from a rule schema definition. */
 export type InferOptionsFromSchema<TSchema extends RuleSchemaDefinition | undefined> = [TSchema] extends [undefined]
@@ -464,6 +634,24 @@ export type InferOptionsFromSchema<TSchema extends RuleSchemaDefinition | undefi
 				? InferArraySchema<TSchema, RootDefinitionsOf<TSchema>>
 				: TSchema extends RuleSchema
 					? readonly [InferSchemaType<TSchema, RootDefinitionsOf<TSchema>>]
+					: UnknownOptions;
+
+type DeepPartialTuple<TTuple extends ReadonlyArray<unknown>> = {
+	readonly [TIndex in keyof TTuple]?: PartialDeep<TTuple[TIndex]>;
+};
+
+export type DefaultOptionsFromSchema<TSchema extends RuleSchemaDefinition | undefined> = [TSchema] extends [undefined]
+	? EmptyOptions
+	: TSchema extends false
+		? UnknownOptions
+		: TSchema extends ReadonlyArray<RuleSchema>
+			? DeepPartialTuple<InferSchemaTupleOptions<TSchema>>
+			: TSchema extends RuleArraySchema
+				? TSchema extends { readonly items: infer TItems extends ReadonlyArray<RuleSchema> }
+					? DeepPartialTuple<InferSchemaTuple<TItems, RootDefinitionsOf<TSchema>>>
+					: PartialDeep<InferArraySchema<TSchema, RootDefinitionsOf<TSchema>>>
+				: TSchema extends RuleSchema
+					? readonly [PartialDeep<InferSchemaType<TSchema, RootDefinitionsOf<TSchema>>>?]
 					: UnknownOptions;
 
 export type RuleOptions = ReadonlyArray<unknown>;
@@ -482,49 +670,72 @@ export type Context<TOptions extends RuleOptions = EmptyOptions, TMessageIds ext
 };
 
 export type InferContextFromRule<TRule> =
-	TRule extends CreateRule<infer TOptions, infer TMessageIds, infer _TSchema extends RuleSchemaDefinition | undefined>
-		? Context<TOptions, TMessageIds>
+	TRule extends CreateRule<
+		infer TSchema extends RuleSchemaDefinition | undefined,
+		infer TMessageIds,
+		infer TDefaultOptions
+	>
+		? Context<
+				RuntimeOptionsFromSchemaAndDefaults<
+					TSchema,
+					Extract<TDefaultOptions, DefaultOptionsFromSchema<TSchema> | undefined>
+				>,
+				TMessageIds
+			>
 		: TRule extends CreateOnceRule<
-					infer TOptions,
+					infer TSchema extends RuleSchemaDefinition | undefined,
 					infer TMessageIds,
-					infer _TSchema extends RuleSchemaDefinition | undefined
+					infer TDefaultOptions
 			  >
-			? Context<TOptions, TMessageIds>
+			? Context<
+					RuntimeOptionsFromSchemaAndDefaults<
+						TSchema,
+						Extract<TDefaultOptions, DefaultOptionsFromSchema<TSchema> | undefined>
+					>,
+					TMessageIds
+				>
 			: never;
 
 export interface RuleMeta<
-	TMessageIds extends string = string,
 	TSchema extends RuleSchemaDefinition | undefined = undefined,
+	TMessageIds extends string = string,
+	TDefaultOptions extends DefaultOptionsFromSchema<TSchema> | undefined = undefined,
 > extends Readonly<Except<OxlintRuleMeta, "defaultOptions" | "messages" | "schema">> {
-	readonly defaultOptions?: PartialDeep<InferOptionsFromSchema<TSchema>>;
+	readonly defaultOptions?: TDefaultOptions;
 	readonly messages?: Record<TMessageIds, string>;
 	readonly schema?: TSchema;
 }
 
 export interface CreateRule<
-	TOptions extends RuleOptions = EmptyOptions,
-	TMessageIds extends string = string,
 	TSchema extends RuleSchemaDefinition | undefined = undefined,
+	TMessageIds extends string = string,
+	TDefaultOptions extends DefaultOptionsFromSchema<TSchema> | undefined = undefined,
 > {
-	readonly create: (context: Context<TOptions, TMessageIds>) => Visitor;
-	readonly meta?: RuleMeta<TMessageIds, TSchema>;
+	readonly create: (
+		context: Context<RuntimeOptionsFromSchemaAndDefaults<TSchema, TDefaultOptions>, TMessageIds>,
+	) => Visitor;
+	readonly meta?: RuleMeta<TSchema, TMessageIds, TDefaultOptions>;
 }
 
 export interface CreateOnceRule<
-	TOptions extends RuleOptions = EmptyOptions,
-	TMessageIds extends string = string,
 	TSchema extends RuleSchemaDefinition | undefined = undefined,
+	TMessageIds extends string = string,
+	TDefaultOptions extends DefaultOptionsFromSchema<TSchema> | undefined = undefined,
 > {
-	readonly create?: (context: Context<TOptions, TMessageIds>) => Visitor;
-	readonly createOnce: (context: Context<TOptions, TMessageIds>) => VisitorWithHooks;
-	readonly meta?: RuleMeta<TMessageIds, TSchema>;
+	readonly create?: (
+		context: Context<RuntimeOptionsFromSchemaAndDefaults<TSchema, TDefaultOptions>, TMessageIds>,
+	) => Visitor;
+	readonly createOnce: (
+		context: Context<RuntimeOptionsFromSchemaAndDefaults<TSchema, TDefaultOptions>, TMessageIds>,
+	) => VisitorWithHooks;
+	readonly meta?: RuleMeta<TSchema, TMessageIds, TDefaultOptions>;
 }
 
 export type Rule<
-	TOptions extends RuleOptions = EmptyOptions,
-	TMessageIds extends string = string,
 	TSchema extends RuleSchemaDefinition | undefined = undefined,
-> = CreateOnceRule<TOptions, TMessageIds, TSchema> | CreateRule<TOptions, TMessageIds, TSchema>;
+	TMessageIds extends string = string,
+	TDefaultOptions extends DefaultOptionsFromSchema<TSchema> | undefined = undefined,
+> = CreateOnceRule<TSchema, TMessageIds, TDefaultOptions> | CreateRule<TSchema, TMessageIds, TDefaultOptions>;
 
 export interface Plugin<TRules extends Record<string, OxlintRule | Rule>> {
 	readonly meta?: { readonly name?: string };

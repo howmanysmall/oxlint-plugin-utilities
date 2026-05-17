@@ -1,22 +1,28 @@
-#!/usr/bin/env bun
+#!/usr/bin/env jiti
 
-import { stat } from "node:fs/promises";
+import { readFile, rm, stat } from "node:fs/promises";
 import { basename, extname, resolve } from "node:path";
-import { cwd, exit } from "node:process";
-import { Command } from "@jsr/cliffy__command";
+import { performance } from "node:perf_hooks";
+import { argv, cwd, exit } from "node:process";
+import { Command } from "@cliffy/command";
 import { regex } from "arktype";
-import { $, argv, build, file, nanoseconds, write } from "bun";
-import console from "consola";
-import { bold, cyan, gray, green, magenta, red, yellow } from "picocolors";
+import { consola } from "consola";
 import prettyBytes from "pretty-bytes";
 import prettyMilliseconds from "pretty-ms";
+import { build } from "tsdown";
+import { bold, cyan, gray, green, magenta, red, yellow } from "yoctocolors";
+import { $ } from "zx";
 
-import type { BuildArtifact, BuildConfig } from "bun";
-
-const scriptPath = import.meta.path;
+const scriptPath = import.meta.filename;
 const scriptName = basename(scriptPath, extname(scriptPath));
 const entryPoints: ReadonlyArray<string> = ["./plugins/oxc/small-rules/index.ts"];
-const externalPackages: ReadonlyArray<string> = ["oxc-parser"];
+const externalPackages: ReadonlyArray<string> = [
+	"@oxlint/plugins",
+	"type-fest",
+	"oxc-parser",
+	"oxc-resolver",
+	"arktype",
+];
 const javaScriptOutputPath = resolve("plugins/oxc/small-rules.js");
 const sourceMapOutputPath = resolve("plugins/oxc/small-rules.js.map");
 const pluginTypeScriptConfigurationPath = "./tsconfig.plugins.json";
@@ -39,153 +45,26 @@ interface BuildResult {
 	readonly success: boolean;
 }
 
-type BuildRelatedMessage = BuildMessage | ResolveMessage;
-
-function isRecord(object: unknown): object is Record<string, unknown> {
-	return typeof object === "object" && object !== null && !Array.isArray(object);
-}
-
-function isValidMessageLevel(level: unknown): level is BuildMessage["level"] {
-	return level === "error" || level === "warning" || level === "info" || level === "debug" || level === "verbose";
-}
-
-function isBuildPosition(position: unknown): position is BuildMessage["position"] {
-	return (
-		position === null ||
-		(isRecord(position) &&
-			typeof position.column === "number" &&
-			typeof position.file === "string" &&
-			typeof position.length === "number" &&
-			typeof position.line === "number" &&
-			typeof position.lineText === "string" &&
-			typeof position.namespace === "string")
-	);
-}
-
-function isBuildMessage(object: unknown): object is BuildMessage {
-	return (
-		isRecord(object) &&
-		object.name === "BuildMessage" &&
-		typeof object.message === "string" &&
-		isValidMessageLevel(object.level) &&
-		isBuildPosition(object.position)
-	);
-}
-
-function isResolveMessage(object: unknown): object is ResolveMessage {
-	return (
-		isRecord(object) &&
-		object.name === "ResolveMessage" &&
-		typeof object.code === "string" &&
-		typeof object.importKind === "string" &&
-		typeof object.message === "string" &&
-		isValidMessageLevel(object.level) &&
-		isBuildPosition(object.position) &&
-		typeof object.referrer === "string" &&
-		typeof object.specifier === "string"
-	);
-}
-
-function isBuildRelatedMessage(object: unknown): object is BuildRelatedMessage {
-	return isBuildMessage(object) || isResolveMessage(object);
-}
-
-function getJavaScriptMinifyConfiguration(minify: boolean): NonNullable<BuildConfig["minify"]> {
-	return minify || { identifiers: false, keepNames: false, syntax: true, whitespace: true };
-}
-
-function getJavaScriptMinifyLabel(minify: boolean): string {
-	return minify ? green("full") : cyan("syntax+whitespace");
-}
-
-function formatBuildMessage(buildRelatedMessage: BuildRelatedMessage): string {
-	const parts = new Array<string>();
-	let size = 0;
-
-	if (buildRelatedMessage.position) {
-		const { column, length, line, lineText } = buildRelatedMessage.position;
-		const relativePath = buildRelatedMessage.position.file.replace(`${cwd()}/`, "");
-
-		parts[size++] = `${cyan(relativePath)}:${yellow(String(line))}:${yellow(String(column))}`;
-		parts[size++] = `${gray(String(line))} | ${lineText}`;
-
-		const padding = " ".repeat(String(line).length + 3 + column - 1);
-		const underline = "^".repeat(Math.max(1, length));
-		parts[size++] = `${padding}${red(underline)}`;
-	}
-
-	parts[size] = `${red("error:")} ${buildRelatedMessage.message}`;
-	return parts.join("\n");
+function getBooleanString(boolean: boolean): string {
+	return boolean ? green("yes") : gray("no");
 }
 
 async function removeAsync(filePath: string, verbose: boolean): Promise<void> {
-	const bunFile = file(filePath);
-	if (await bunFile.exists()) {
-		if (verbose) console.info(`Removing ${cyan(filePath)}...`);
-		await bunFile.delete();
+	try {
+		await stat(filePath);
+	} catch {
+		return;
 	}
+
+	if (verbose) consola.info(`Removing ${cyan(filePath)}...`);
+	await rm(filePath);
 }
 
 async function cleanOutputFilesAsync(verbose: boolean): Promise<void> {
 	await Promise.all([removeAsync(javaScriptOutputPath, verbose), removeAsync(sourceMapOutputPath, verbose)]);
 }
 
-function getUnexpectedArtifactPaths(
-	outputs: ReadonlyArray<BuildArtifact>,
-	sourceMapEnabled: boolean,
-): ReadonlyArray<string> {
-	const unexpectedArtifactPaths = new Array<string>();
-	let size = 0;
-
-	for (const output of outputs) {
-		if (output.kind === "entry-point" || (sourceMapEnabled && output.kind === "sourcemap")) continue;
-		unexpectedArtifactPaths[size++] = output.path;
-	}
-
-	return unexpectedArtifactPaths;
-}
-
-async function writeBuildOutputsAsync(
-	outputs: ReadonlyArray<BuildArtifact>,
-	sourceMapEnabled: boolean,
-): Promise<ReadonlyArray<OutputFile>> {
-	const entryPointOutputs = outputs.filter((output) => output.kind === "entry-point");
-	const sourceMapOutputs = outputs.filter((output) => output.kind === "sourcemap");
-
-	if (entryPointOutputs.length !== 1) {
-		const error = new Error(`Expected exactly one entry-point artifact, received ${entryPointOutputs.length}.`);
-		Error.captureStackTrace(error, writeBuildOutputsAsync);
-		throw error;
-	}
-
-	if (sourceMapEnabled && sourceMapOutputs.length !== 1) {
-		const error = new Error(`Expected exactly one sourcemap artifact, received ${sourceMapOutputs.length}.`);
-		Error.captureStackTrace(error, writeBuildOutputsAsync);
-		throw error;
-	}
-
-	if (!sourceMapEnabled && sourceMapOutputs.length > 0) {
-		const error = new Error("Bun produced a sourcemap artifact even though sourcemaps were disabled.");
-		Error.captureStackTrace(error, writeBuildOutputsAsync);
-		throw error;
-	}
-
-	const unexpectedArtifactPaths = getUnexpectedArtifactPaths(outputs, sourceMapEnabled);
-	if (unexpectedArtifactPaths.length > 0) {
-		const error = new Error(`Unexpected build artifacts: ${unexpectedArtifactPaths.join(", ")}`);
-		Error.captureStackTrace(error, writeBuildOutputsAsync);
-		throw error;
-	}
-
-	const [entryPoint] = entryPointOutputs;
-	if (entryPoint === undefined) {
-		const error = new Error("Entry point artifact is undefined");
-		Error.captureStackTrace(error, writeBuildOutputsAsync);
-		throw error;
-	}
-
-	await write(javaScriptOutputPath, entryPoint, { createPath: true });
-
+async function getOutputFilesAsync(sourcemap: boolean): Promise<ReadonlyArray<OutputFile>> {
 	const javaScriptStatistics = await stat(javaScriptOutputPath);
 	const files = [
 		{
@@ -194,15 +73,7 @@ async function writeBuildOutputsAsync(
 		},
 	];
 
-	if (sourceMapEnabled) {
-		const [sourceMapOutput] = sourceMapOutputs;
-		if (sourceMapOutput === undefined) {
-			const error = new Error("Source map artifact is undefined");
-			Error.captureStackTrace(error, writeBuildOutputsAsync);
-			throw error;
-		}
-
-		await write(sourceMapOutputPath, sourceMapOutput, { createPath: true });
+	if (sourcemap) {
 		const sourceMapStatistics = await stat(sourceMapOutputPath);
 		files[1] = {
 			path: sourceMapOutputPath.replace(`${cwd()}/`, ""),
@@ -213,64 +84,57 @@ async function writeBuildOutputsAsync(
 	return files.toSorted((left, right) => left.path.localeCompare(right.path));
 }
 
-async function runBuildAsync(options: BuildOptions): Promise<BuildResult> {
-	const startTime = nanoseconds();
+async function runBuildAsync(buildOptions: BuildOptions): Promise<BuildResult> {
+	const startTime = performance.now();
 
 	try {
-		if (options.clean) {
-			if (options.verbose) console.start("Cleaning output files...");
-			await cleanOutputFilesAsync(options.verbose);
-			if (options.verbose) console.success("Cleaned output files");
+		if (buildOptions.clean) {
+			if (buildOptions.verbose) consola.start("Cleaning output files...");
+			await cleanOutputFilesAsync(buildOptions.verbose);
+			if (buildOptions.verbose) consola.success("Cleaned output files");
 		}
 
-		if (options.verbose) {
-			console.start("Building with ..");
-			console.info(`  Entry points: ${cyan(entryPoints.join(", "))}`);
-			console.info(`  Minify: ${getJavaScriptMinifyLabel(options.minify)}`);
-			console.info(`  Sourcemap: ${options.sourcemap ? green("yes") : gray("no")}`);
-			console.info(`  TypeScript config: ${cyan(pluginTypeScriptConfigurationPath)}`);
-			console.info(`  Output file: ${cyan(javaScriptOutputPath)}`);
+		if (buildOptions.verbose) {
+			consola.start("Building with tsdown...");
+			consola.info(`  Entry points: ${cyan(entryPoints.join(", "))}`);
+			consola.info(`  Minify: ${getBooleanString(buildOptions.minify)}`);
+			consola.info(`  Sourcemap: ${getBooleanString(buildOptions.sourcemap)}`);
+			consola.info(`  TypeScript config: ${cyan(pluginTypeScriptConfigurationPath)}`);
+			consola.info(`  Output file: ${cyan(javaScriptOutputPath)}`);
 		}
 
-		const buildResult = await build({
-			entrypoints: [...entryPoints],
+		const [entryPoint] = entryPoints;
+		if (entryPoint === undefined) {
+			const error = new Error("No entry point defined");
+			Error.captureStackTrace(error, runBuildAsync);
+			throw error;
+		}
+
+		await build({
+			clean: false,
+			dts: false,
+			entry: { "small-rules": entryPoint },
 			external: [...externalPackages],
-			format: "esm",
-			minify: getJavaScriptMinifyConfiguration(options.minify),
-			packages: "bundle",
-			plugins: [],
-			sourcemap: options.sourcemap ? "external" : "none",
-			target: "node",
-			throw: false,
+			fixedExtension: false,
+			format: ["esm"],
+			logLevel: "silent",
+			minify: buildOptions.minify,
+			outDir: "plugins/oxc",
+			platform: "node",
+			sourcemap: buildOptions.sourcemap,
 			tsconfig: pluginTypeScriptConfigurationPath,
 		});
 
-		if (!buildResult.success) {
-			for (const log of buildResult.logs) console.error(formatBuildMessage(log));
-			return {
-				duration: (nanoseconds() - startTime) / 1_000_000,
-				files: [],
-				success: false,
-			};
-		}
-
-		const files = await writeBuildOutputsAsync(buildResult.outputs, options.sourcemap);
-		const duration = (nanoseconds() - startTime) / 1_000_000;
+		const files = await getOutputFilesAsync(buildOptions.sourcemap);
+		const duration = performance.now() - startTime;
 
 		return { duration, files, success: true };
 	} catch (error) {
-		if (error instanceof AggregateError) {
-			for (const aggregateError of error.errors) {
-				if (isBuildRelatedMessage(aggregateError)) console.error(formatBuildMessage(aggregateError));
-				else console.error(`${red("error:")} ${String(aggregateError)}`);
-			}
-		} else {
-			const message = error instanceof Error ? error.message : String(error);
-			console.error(`${red("error:")} ${message}`);
-		}
+		const message = error instanceof Error ? error.message : String(error);
+		consola.error(`${red("error:")} ${message}`);
 
 		return {
-			duration: (nanoseconds() - startTime) / 1_000_000,
+			duration: performance.now() - startTime,
 			files: [],
 			success: false,
 		};
@@ -279,126 +143,146 @@ async function runBuildAsync(options: BuildOptions): Promise<BuildResult> {
 
 function printBuildSummary(buildResult: BuildResult, verbose: boolean): void {
 	if (!buildResult.success) {
-		console.fail(red(`Build failed in ${prettyMilliseconds(buildResult.duration)}`));
+		consola.fail(red(`Build failed in ${prettyMilliseconds(buildResult.duration)}`));
 		return;
 	}
 
 	const { files } = buildResult;
 
-	const javaScriptFiles = files.filter(({ path }) => path.endsWith(".js"));
-	const sourceMapFiles = files.filter(({ path }) => path.endsWith(".js.map"));
-	const totalSize = files.reduce((sum, { size }) => sum + size, 0);
+	let javaScriptFiles = 0;
+	let sourceMapFiles = 0;
+	let totalSize = 0;
 
-	console.log("");
-	console.success(green(bold("Build completed successfully!")));
-	console.log("");
+	for (const { path, size } of files) {
+		totalSize += size;
+		if (path.endsWith(".js")) javaScriptFiles += 1;
+		else if (path.endsWith(".js.map")) sourceMapFiles += 1;
+	}
+
+	consola.log("");
+	consola.success(green(bold("Build completed successfully!")));
+	consola.log("");
 
 	if (verbose) {
-		console.info(bold("Output files:"));
+		consola.info(bold("Output files:"));
 		for (const { path, size } of files) {
 			const color = path.endsWith(".js.map") ? gray : cyan;
 			const bytes = gray(`(${prettyBytes(size)})`);
-			console.log(`  ${color(path)} ${bytes}`);
+			consola.log(`  ${color(path)} ${bytes}`);
 		}
-		console.log("");
+		consola.log("");
 	}
 
-	console.info(bold("Summary:"));
-	// oxlint-disable-next-line no-script-url -- what?
-	console.log(`  ${cyan("JavaScript:")} ${javaScriptFiles.length} files`);
-	if (sourceMapFiles.length > 0) console.log(`  ${gray("Sourcemaps:")} ${sourceMapFiles.length} files`);
-	console.log(`  ${magenta("Total size:")} ${prettyBytes(totalSize)}`);
-	console.log(`  ${green("Duration:")} ${prettyMilliseconds(buildResult.duration)}`);
+	consola.info(bold("Summary:"));
+	// oxlint-disable-next-line no-script-url
+	consola.log(`  ${cyan("JavaScript:")} ${javaScriptFiles} files`);
+	if (sourceMapFiles > 0) consola.log(`  ${gray("Sourcemaps:")} ${sourceMapFiles} files`);
+	consola.log(`  ${magenta("Total size:")} ${prettyBytes(totalSize)}`);
+	consola.log(`  ${green("Duration:")} ${prettyMilliseconds(buildResult.duration)}`);
 }
 
 const MATCH_LINE = regex(
 	// oxlint-disable-next-line unicorn/prefer-string-raw
 	"^(?<filePath>.+?)\\((?<lineNumberString>\\d+),(?<columnNumberString>\\d+)\\): (?<level>error|warning) (?<code>TS\\d+): (?<message>.+)$",
+	"u",
 );
-const CARRIAGE_RETURN = /\r$/;
+const CARRIAGE_RETURN = /\r$/u;
+
+async function getSourceLinesAsync(
+	fileCache: Map<string, ReadonlyArray<string>>,
+	filePath: string,
+): Promise<ReadonlyArray<string> | undefined> {
+	const cached = fileCache.get(filePath);
+	if (cached) return cached;
+
+	try {
+		const fileContent = await readFile(filePath, "utf8");
+		const sourceLines = fileContent.split("\n");
+		fileCache.set(filePath, sourceLines);
+		return sourceLines;
+	} catch {
+		return undefined;
+	}
+}
+
+const TAB_REGEXP = /\t/gu;
+
+async function printSourceContextAsync(
+	fileCache: Map<string, ReadonlyArray<string>>,
+	filePath: string,
+	lineNumber: number,
+	lineNumberString: string,
+	columnNumber: number,
+): Promise<void> {
+	const sourceLines = await getSourceLinesAsync(fileCache, filePath);
+	if (!sourceLines) return;
+
+	const sourceLine = sourceLines[lineNumber - 1]?.replace(CARRIAGE_RETURN, "");
+	if (sourceLine === undefined) return;
+
+	const displayLine = sourceLine.replaceAll("	", "    ");
+	const tabCount = (sourceLine.slice(0, columnNumber - 1).match(TAB_REGEXP) ?? []).length;
+	const displayColumn = columnNumber - 1 + tabCount * 3;
+
+	consola.log(`${gray(lineNumberString)} | ${displayLine}`);
+	const padding = " ".repeat(lineNumberString.length + 3 + displayColumn);
+	consola.log(`${padding}${red("^")}`);
+}
 
 async function validateTypesAsync(verbose: boolean): Promise<void> {
-	if (verbose) console.start("Validating types...");
-	const startTime = nanoseconds();
+	if (verbose) consola.start("Validating types...");
+	const startTime = performance.now();
 
-	const shellOutput = await $`bun x --bun tsgo --project ./tsconfig.plugins.json --noEmit`.quiet().nothrow();
-	const duration = (nanoseconds() - startTime) / 1_000_000;
+	const shellOutput = await $`aube run type-check -- --project ./tsconfig.plugins.json`.quiet().nothrow();
+	const duration = performance.now() - startTime;
 
 	if (shellOutput.exitCode === 0) {
-		if (verbose) console.success(`Types validated in ${prettyMilliseconds(duration)}`);
+		if (verbose) consola.success(`Types validated in ${prettyMilliseconds(duration)}`);
 		return;
 	}
 
-	console.fail(red(`Type validation failed in ${prettyMilliseconds(duration)}`));
-	console.log("");
+	consola.fail(red(`Type validation failed in ${prettyMilliseconds(duration)}`));
+	consola.log("");
 
-	const stdout = shellOutput.stdout.toString().trim();
+	const stdout = shellOutput.stdout.trim();
 	if (stdout) {
 		const lines = stdout.split("\n");
 		const fileCache = new Map<string, ReadonlyArray<string>>();
 
-		// oxlint-disable-next-line no-inner-declarations
-		async function getSourceLinesAsync(filePath: string): Promise<ReadonlyArray<string> | undefined> {
-			const cached = fileCache.get(filePath);
-			if (cached) return cached;
-
-			const bunFile = file(filePath);
-			const exists = await bunFile.exists();
-			if (!exists) return undefined;
-
-			const fileContent = await bunFile.text();
-			const sourceLines = fileContent.split("\n");
-			fileCache.set(filePath, sourceLines);
-			return sourceLines;
-		}
-
 		for (const line of lines) {
 			const match = MATCH_LINE.exec(line);
 			if (match) {
-				const { filePath, lineNumberString, columnNumberString, level, code, message } = match.groups;
+				const { code, columnNumberString, filePath, level, lineNumberString, message } = match.groups;
 
 				const relativePath = filePath.replace(`${cwd()}/`, "");
 				const lineNumber = Number.parseInt(lineNumberString, 10);
 				const columnNumber = Number.parseInt(columnNumberString, 10);
 
-				console.log(`${cyan(relativePath)}:${yellow(lineNumberString)}:${yellow(columnNumberString)}`);
+				consola.log(`${cyan(relativePath)}:${yellow(lineNumberString)}:${yellow(columnNumberString)}`);
 
 				try {
 					// oxlint-disable-next-line no-await-in-loop
-					const sourceLines = await getSourceLinesAsync(filePath);
-					// oxlint-disable-next-line max-depth
-					if (!sourceLines) continue;
-
-					const sourceLine = sourceLines[lineNumber - 1]?.replace(CARRIAGE_RETURN, "");
-					// oxlint-disable-next-line max-depth
-					if (sourceLine === undefined) continue;
-
-					const displayLine = sourceLine.replaceAll("	", "    ");
-					const tabCount = (sourceLine.slice(0, columnNumber - 1).match(/\t/g) ?? []).length;
-					const displayColumn = columnNumber - 1 + tabCount * 3;
-
-					console.log(`${gray(lineNumberString)} | ${displayLine}`);
-					const padding = " ".repeat(lineNumberString.length + 3 + displayColumn);
-					console.log(`${padding}${red("^")}`);
+					await printSourceContextAsync(fileCache, filePath, lineNumber, lineNumberString, columnNumber);
 				} catch {
-					// Ignore read errors
+					// Keep the original type-check output even if context extraction fails.
 				}
 
 				const levelText = level === "error" ? red("error:") : yellow("warning:");
-				console.log(`${levelText} ${message} ${gray(`(${code})`)}\n`);
-			} else if (line.trim() !== "") console.log(gray(line));
+				const codeText = gray(`(${code})`);
+				consola.log(`${levelText} ${message} ${codeText}\n`);
+			} else if (line.trim() !== "") consola.log(gray(line));
 		}
 	}
 
-	const stderr = shellOutput.stderr.toString().trim();
-	if (stderr) console.error(`\n${red(stderr)}`);
+	const stderr = shellOutput.stderr.trim();
+	if (stderr) consola.error(`\n${red(stderr)}`);
 
 	exit(1);
 }
 
 const command = new Command()
 	.name(scriptName)
-	.version("1.0.0")
+	.version("2.0.0")
 	.description("Build the Oxlint plugin for distribution.")
 	.option("--no-clean", "Skip cleaning existing outputs before build", { default: true })
 	.option("-v, --verbose", "Show detailed build output", { default: false })
@@ -406,11 +290,11 @@ const command = new Command()
 	.option("--sourcemap", "Generate a sourcemap next to the built plugin", { default: false })
 	.action(async ({ clean, minify, sourcemap, verbose }) => {
 		if (verbose) {
-			console.info(bold("Build configuration:"));
-			console.log(`  Clean: ${clean ? green("yes") : gray("no")}`);
-			console.log(`  Minify: ${getJavaScriptMinifyLabel(minify)}`);
-			console.log(`  Sourcemap: ${sourcemap ? green("yes") : gray("no")}`);
-			console.log("");
+			consola.info(bold("Build configuration:"));
+			consola.log(`  Clean: ${getBooleanString(clean)}`);
+			consola.log(`  Minify: ${getBooleanString(minify)}`);
+			consola.log(`  Sourcemap: ${getBooleanString(sourcemap)}`);
+			consola.log("");
 		}
 
 		await validateTypesAsync(verbose);
@@ -421,4 +305,5 @@ const command = new Command()
 		if (!buildResult.success) exit(1);
 	});
 
-await command.parse(argv.slice(2));
+const scriptIndex = argv.findIndex((argument) => resolve(argument) === import.meta.filename);
+await command.parse(argv.slice(scriptIndex + 1));

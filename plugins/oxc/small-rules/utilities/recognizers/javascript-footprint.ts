@@ -51,7 +51,7 @@ const CODE_PATTERNS: ReadonlyArray<RegExp | string> = [
 	"else{",
 	"this.",
 	"window.",
-	/;\s+\/\//,
+	/;\s+\/\//u,
 	"import '",
 	'import "',
 	"require(",

@@ -98,8 +98,8 @@ function groupComments(comments: ReadonlyArray<Comment>, sourceCode: SourceCode)
 	return groups;
 }
 
-const OPENING_BRACE = /{/g;
-const CLOSING_BRACE = /}/g;
+const OPENING_BRACE = /\{/gu;
+const CLOSING_BRACE = /\}/gu;
 function injectMissingBraces(value: string): string {
 	const openCount = (value.match(OPENING_BRACE) ?? []).length;
 	const closeCount = (value.match(CLOSING_BRACE) ?? []).length;
@@ -165,7 +165,7 @@ function isExclusion(statements: ReadonlyArray<ESTree.Statement>, codeText: stri
 	);
 }
 
-const ALLOWED_PARSE_ERROR_PATTERNS = [/A 'return' statement can only be used within a function body/] as const;
+const ALLOWED_PARSE_ERROR_PATTERNS = [/A 'return' statement can only be used within a function body/u] as const;
 type Errors = ReadonlyArray<{ readonly message: string }>;
 function hasOnlyAllowedErrors(errors: Errors): boolean {
 	for (const error of errors) {

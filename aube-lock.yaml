@@ -344,7 +344,6 @@ time:
   postcss@8.5.14: 2026-05-04T16:43:35.284Z
   pretty-bytes@7.1.0: 2025-09-21T07:36:56.073Z
   pretty-ms@9.3.0: 2025-09-15T10:58:51.548Z
-  publint@0.3.20: 2026-05-08T10:13:40.577Z
   publint@0.3.21: 2026-05-13T00:28:23.832Z
   quansync@1.0.0: 2025-12-04T18:51:32.718Z
   rc9@2.1.2: 2024-04-09T17:15:22.489Z
@@ -481,9 +480,6 @@ importers:
       consola:
         specifier: ^3.4.2
         version: 3.4.2
-      execa:
-        specifier: ^9.6.1
-        version: 9.6.1
       jiti:
         specifier: ^2.7.0
         version: 2.7.0

@@ -116,13 +116,13 @@ function h(e) {
 		},
 	};
 }
-const g = /\s+/g,
-	ee = /[-/^$*+?.()|[\]{}]/g;
+const g = /\s+/gu,
+	ee = /[-/^$*+?.()|[\]{}]/gu;
 function _(e) {
 	return e.replaceAll(ee, String.raw`\$&`);
 }
 function v(e, t) {
-	let n = t.map((e) => (typeof e == `string` ? new RegExp(_(e), `g`) : new RegExp(e.source, `g`)));
+	let n = t.map((e) => (typeof e == `string` ? new RegExp(_(e), `gu`) : new RegExp(e.source, `gu`)));
 	return {
 		probability: e,
 		scan(e) {
@@ -137,7 +137,7 @@ function v(e, t) {
 		},
 	};
 }
-const y = /\s/;
+const y = /\s/u;
 function b(e, t) {
 	let n = new Set(t);
 	return {
@@ -152,7 +152,7 @@ function b(e, t) {
 		},
 	};
 }
-const te = /[ \t(),{}]/;
+const te = /[ \t(),{}]/u;
 function x(e, t) {
 	let n = new Set(t);
 	return {
@@ -180,7 +180,7 @@ const ne =
 		`else{`,
 		`this.`,
 		`window.`,
-		/;\s+\/\//,
+		/;\s+\/\//u,
 		`import '`,
 		`import "`,
 		`require(`,
@@ -241,8 +241,8 @@ function de(e, t) {
 		n
 	);
 }
-const fe = /{/g,
-	pe = /}/g;
+const fe = /\{/gu,
+	pe = /\}/gu;
 function me(e) {
 	let t = (e.match(fe) ?? []).length - (e.match(pe) ?? []).length;
 	return t > 0 ? e + `}`.repeat(t) : t < 0 ? `{`.repeat(-t) + e : e;
@@ -281,7 +281,7 @@ function Se(e, t) {
 	let n = e.at(0);
 	return n ? ce(n) || ge(n) || xe(n, t) : !1;
 }
-const Ce = [/A 'return' statement can only be used within a function body/];
+const Ce = [/A 'return' statement can only be used within a function body/u];
 function S(e) {
 	for (let t of e) {
 		let e = !1;
@@ -514,13 +514,13 @@ const R = `replace`,
 		setupFilesAfterEnv: !0,
 	},
 	Re = [`i18n`, `l10n`],
-	ze = /(?=[A-Z])|(?<=[_.-])/,
+	ze = /(?=[A-Z])|(?<=[_.-])/u,
 	Be = new Set(
 		`any.as.boolean.break.case.catch.class.const.constructor.continue.debugger.declare.default.delete.do.else.enum.export.extends.false.finally.for.from.function.get.if.implements.import.in.instanceof.interface.let.module.new.null.number.of.package.private.protected.public.require.return.set.static.string.super.switch.symbol.this.throw.true.try.type.typeof.var.void.while.with.yield`.split(
 			`.`,
 		),
 	),
-	Ve = /^[A-Za-z]+$/;
+	Ve = /^[A-Za-z]+$/u;
 function He(e) {
 	return (e >= 65 && e <= 90) || (e >= 97 && e <= 122) || e === 36 || e === 95;
 }

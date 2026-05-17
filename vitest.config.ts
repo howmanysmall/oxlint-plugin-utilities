@@ -1,6 +1,13 @@
+import { resolve } from "node:path";
 import { defineConfig } from "vitest/config";
 
 const configuration = defineConfig({
+	resolve: {
+		alias: [
+			{ find: "#src", replacement: resolve("src/index.ts") },
+			{ find: /^#src\/(.+)$/u, replacement: `${resolve("src")}/$1` },
+		],
+	},
 	test: {
 		benchmark: {
 			include: ["tests/**/*.bench.ts"],
