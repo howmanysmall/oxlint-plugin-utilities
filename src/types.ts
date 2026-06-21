@@ -665,7 +665,7 @@ export type Context<TOptions extends RuleOptions = EmptyOptions, TMessageIds ext
 	"options" | "report"
 > & {
 	readonly options: TOptions;
-	// oxlint-disable-next-line typescript/no-invalid-void-type
+	// oxlint-disable-next-line typescript/no-invalid-void-type typescript/method-signature-style -- mirror type
 	report(this: void, diagnostic: Diagnostic<TMessageIds>): void;
 };
 

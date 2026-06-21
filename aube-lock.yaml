@@ -12,101 +12,101 @@ importers:
         specifier: ^0.18.1
         version: 0.18.3
       '@oxlint/plugins':
-        specifier: ^1.70.0
+        specifier: 1.70.0
         version: 1.70.0
       type-fest:
-        specifier: ^5.7.0
+        specifier: 5.7.0
         version: 5.7.0
       vite:
         specifier: ^6.0.0 || ^7.0.0 || ^8.0.0
         version: 8.0.11(@types/node@25.9.3)(jiti@2.7.0)(yaml@2.9.0)
     devDependencies:
       '@arethetypeswrong/cli':
-        specifier: ^0.18.3
+        specifier: 0.18.3
         version: 0.18.3
       '@biomejs/biome':
-        specifier: ^2.5.0
+        specifier: 2.5.0
         version: 2.5.0
       '@cliffy/command':
         specifier: jsr:^1.1.0
         version: 1.1.0
       '@commitlint/config-conventional':
-        specifier: ^21.0.2
+        specifier: 21.0.2
         version: 21.0.2
       '@commitlint/types':
-        specifier: ^21.0.1
+        specifier: 21.0.1
         version: 21.0.1
       '@pobammer-ts/small-rules':
-        specifier: ^2.0.0
+        specifier: 2.0.0
         version: 2.0.0(typescript@5.9.3)
       '@total-typescript/ts-reset':
-        specifier: ^0.6.1
+        specifier: 0.6.1
         version: 0.6.1
       '@types/node':
-        specifier: ^25.9.3
+        specifier: 25.9.3
         version: 25.9.3
       '@typescript/native-preview':
-        specifier: ^7.0.0-dev.20260620.1
+        specifier: 7.0.0-dev.20260620.1
         version: 7.0.0-dev.20260620.1
       '@vitest/coverage-v8':
         specifier: 4.1.9
         version: 4.1.9(vitest@4.1.9)
       arktype:
-        specifier: ^2.2.1
+        specifier: 2.2.1
         version: 2.2.1
       bumpp:
-        specifier: ^11.1.0
+        specifier: 11.1.0
         version: 11.1.0
       changelogithub:
-        specifier: ^14.0.0
+        specifier: 14.0.0
         version: 14.0.0(magicast@0.5.2)
       commitlint:
-        specifier: ^21.0.2
+        specifier: 21.0.2
         version: 21.0.2(@types/node@25.9.3)(conventional-commits-parser@6.4.0)(typescript@5.9.3)
       consola:
-        specifier: ^3.4.2
+        specifier: 3.4.2
         version: 3.4.2
       jiti:
-        specifier: ^2.7.0
+        specifier: 2.7.0
         version: 2.7.0
       knip:
-        specifier: ^6.17.1
+        specifier: 6.17.1
         version: 6.17.1
       oxfmt:
-        specifier: ^0.55.0
+        specifier: 0.55.0
         version: 0.55.0
       oxlint:
-        specifier: ^1.70.0
+        specifier: 1.70.0
         version: 1.70.0(oxlint-tsgolint@0.23.0)
       oxlint-tsgolint:
-        specifier: ^0.23.0
+        specifier: 0.23.0
         version: 0.23.0
       pretty-bytes:
-        specifier: ^7.1.0
+        specifier: 7.1.0
         version: 7.1.0
       pretty-ms:
-        specifier: ^9.3.0
+        specifier: 9.3.0
         version: 9.3.0
       publint:
-        specifier: ^0.3.21
+        specifier: 0.3.21
         version: 0.3.21
       temporal-polyfill:
-        specifier: ^0.3.2
+        specifier: 0.3.2
         version: 0.3.2
       tsdown:
-        specifier: ^0.22.3
+        specifier: 0.22.3
         version: 0.22.3(@arethetypeswrong/core@0.18.3)(publint@0.3.21)(typescript@5.9.3)
       typescript:
-        specifier: ^5
+        specifier: '5'
         version: 5.9.3
       vitest:
         specifier: 4.1.9
         version: 4.1.9(@types/node@25.9.3)(@vitest/coverage-v8@4.1.9)(vite@8.0.11(@types/node@25.9.3)(jiti@2.7.0)(yaml@2.9.0))
       yoctocolors:
-        specifier: ^2.1.2
+        specifier: 2.1.2
         version: 2.1.2
       zx:
-        specifier: ^8.8.5
+        specifier: 8.8.5
         version: 8.8.5
 
 packages:
