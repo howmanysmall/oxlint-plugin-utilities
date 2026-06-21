@@ -22,10 +22,9 @@
 		"**/node_modules/**",
 		"tests/fixtures/**/*.d.ts",
 		".context/**",
-		"plugins/oxc/small-rules.js",
 		"**/dist/**",
 	],
-	"jsPlugins": ["./plugins/oxc/small-rules.js"],
+	"jsPlugins": [{ "name": "small-rules", "specifier": "@pobammer-ts/small-rules" }],
 	"options": {
 		"denyWarnings": true,
 		"maxWarnings": 0,
@@ -36,9 +35,7 @@
 	"overrides": [
 		{
 			"files": ["documentation/**/*.ts", "documentation/**/*.astro"],
-			"globals": {
-				"Astro": "readonly",
-			},
+			"globals": { "Astro": "readonly" },
 		},
 		{
 			"files": ["scripts/**/*.ts"],
