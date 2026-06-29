@@ -1,7 +1,6 @@
-toml-version = "v1.1.0"
+toml-version = "v1.0.0"
 
 [files]
-# exclude = []
 include = ["**/*.toml"]
 
 [format]
@@ -20,7 +19,7 @@ key-value-equals-sign-space-width = 1
 line-ending = "lf"
 line-width = 120
 string-quote-style = "double"
-trailing-comment-alignment = false
+trailing-comment-alignment = true
 trailing-comment-space-width = 2
 
 [lint]

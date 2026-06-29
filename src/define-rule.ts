@@ -1,4 +1,4 @@
-import type { CreateOnceRule, CreateRule, InferOptionsFromSchema, Rule, RuleSchemaDefinition } from "./types";
+import type { CreateOnceRule, CreateRule, DefaultOptionsFromSchema, Rule, RuleSchemaDefinition } from "./types";
 
 /**
  * Define a rule.
@@ -11,15 +11,13 @@ import type { CreateOnceRule, CreateRule, InferOptionsFromSchema, Rule, RuleSche
 export function defineRule<
 	const TSchema extends RuleSchemaDefinition | undefined = undefined,
 	TMessageIds extends string = string,
->(
-	rule: CreateRule<InferOptionsFromSchema<TSchema>, TMessageIds, TSchema>,
-): CreateRule<InferOptionsFromSchema<TSchema>, TMessageIds, TSchema>;
+	const TDefaultOptions extends DefaultOptionsFromSchema<TSchema> | undefined = undefined,
+>(rule: CreateRule<TSchema, TMessageIds, TDefaultOptions>): CreateRule<TSchema, TMessageIds, TDefaultOptions>;
 export function defineRule<
 	const TSchema extends RuleSchemaDefinition | undefined = undefined,
 	TMessageIds extends string = string,
->(
-	rule: CreateOnceRule<InferOptionsFromSchema<TSchema>, TMessageIds, TSchema>,
-): CreateOnceRule<InferOptionsFromSchema<TSchema>, TMessageIds, TSchema>;
+	const TDefaultOptions extends DefaultOptionsFromSchema<TSchema> | undefined = undefined,
+>(rule: CreateOnceRule<TSchema, TMessageIds, TDefaultOptions>): CreateOnceRule<TSchema, TMessageIds, TDefaultOptions>;
 export function defineRule(rule: Rule): Rule {
 	return rule;
 }

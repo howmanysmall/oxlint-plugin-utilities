@@ -1,11 +1,13 @@
-import { describe, expect, test } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import { definePlugin, defineRule } from "../dist/index.js";
 
 import type { CreateRule, Plugin, Rule } from "../dist/index.js";
 
 describe("dist defineRule()", () => {
-	test("returns the same rule instance", () => {
+	it("returns the same rule instance", () => {
+		expect.assertions(1);
+
 		const rule = {
 			create: () => ({}),
 		} as const satisfies CreateRule;
@@ -15,7 +17,9 @@ describe("dist defineRule()", () => {
 });
 
 describe("dist definePlugin()", () => {
-	test("returns the same plugin instance", () => {
+	it("returns the same plugin instance", () => {
+		expect.assertions(1);
+
 		const createRule = defineRule({
 			create: () => ({}),
 		} as const satisfies CreateRule);

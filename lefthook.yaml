@@ -1,14 +1,14 @@
 commit-msg:
   jobs:
     - name: commitlint
-      run: bun x --bun commitlint --edit {1}
+      run: nr commitlint --edit {1}
 
 min_version: 2.1.4
 
 post-merge:
   jobs:
-    - name: bun-install
-      run: bun install
+    - name: package-install
+      run: pullhook --install
 
 pre-commit:
   jobs:
@@ -20,7 +20,7 @@ pre-commit:
         - "*.grit"
         - "*.code-workspace"
       name: biome-json
-      run: bun run biome:check --write --no-errors-on-unmatched {staged_files}
+      run: nr biome check --write --no-errors-on-unmatched {staged_files}
       stage_fixed: true
 
     - glob:
@@ -30,16 +30,16 @@ pre-commit:
         - "*.tsx"
       name: js-ts-fix
       run: |
-        bun run oxc --fix {staged_files}
-        bun run biome:check --write --no-errors-on-unmatched {staged_files}
-        bun run format {staged_files}
+        nr oxc --fix {staged_files}
+        nr biome check --write --no-errors-on-unmatched {staged_files}
+        nr format {staged_files}
       stage_fixed: true
 
     - glob:
         - "*.json5"
         - "*.mdx"
       name: format-json5-mdx
-      run: bun run format {staged_files}
+      run: nr format {staged_files}
       stage_fixed: true
 
     - glob: "*.md"
@@ -60,43 +60,43 @@ pre-commit:
         - "*.yaml"
         - "*.yml"
       name: yaml-format
-      run: bun run format {staged_files}
+      run: nr format {staged_files}
       stage_fixed: true
+
 pre-push:
   jobs:
     - name: build
       run: |
         if echo {push_files} | grep -qE '\.(ts|tsx|js|jsx|json|jsonc|toml)$'; then
-          bun run build
+          nr build
         fi
 
     - name: biome-ci
       run: |
         if echo {push_files} | grep -qE '\.(css|html|json|jsonc|grit|code-workspace|js|jsx|ts|tsx)$'; then
-          bun run biome:ci
+          nr biome ci
         fi
 
     - name: oxc
       run: |
         if echo {push_files} | grep -qE '\.(js|jsx|ts|tsx)$'; then
-          bun run build:oxc --minify
-          bun run oxc .
+          nr oxc .
         fi
 
     - name: type-check
       run: |
         if echo {push_files} | grep -qE '\.(ts|tsx|js|jsx|json|jsonc)$'; then
-          bun run type-check
+          nr type-check
         fi
 
     - name: knip
       run: |
         if echo {push_files} | grep -qE '\.(ts|tsx|js|jsx|json|jsonc|toml)$'; then
-          bun run knip
+          nr knip
         fi
 
     - name: test
       run: |
         if echo {push_files} | grep -qE '\.(ts|tsx|js|jsx|json|jsonc|toml)$'; then
-          bun run vitest run
+          nr test
         fi

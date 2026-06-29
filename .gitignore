@@ -110,6 +110,7 @@ CLAUDE.local.md
 .env.test.local
 .env.production.local
 .env.local
+.envrc
 
 # Claude Code
 .claude/settings.local.json
@@ -145,3 +146,5 @@ opensrc/
 documentation/.astro
 *.afdesign~lock~
 screenshots/
+
+.omo/

@@ -26,9 +26,9 @@
 		"skipLibCheck": true,
 		"strict": true,
 		"target": "es2023",
-		"types": ["bun", "node"],
+		"types": ["node"],
 		"useUnknownInCatchVariables": true,
-		"verbatimModuleSyntax": true,
+		"verbatimModuleSyntax": true
 	},
-	"exclude": ["dist", "node_modules"],
+	"exclude": ["dist", "node_modules"]
 }

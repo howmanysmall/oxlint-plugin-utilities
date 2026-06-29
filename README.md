@@ -15,7 +15,7 @@ safety than the originals from `@oxlint/plugins`.
 ## Install
 
 ```bash
-bun add oxlint-plugin-utilities
+npm install oxlint-plugin-utilities
 ```
 
 Requires `typescript ^5.0` as a peer dependency.
@@ -137,4 +137,4 @@ This package re-exports all core types used by oxlint and helper aliases:
 
 ## License
 
-MIT
+CC0 1.0 Universal — No Rights Reserved

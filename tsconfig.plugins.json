@@ -3,7 +3,6 @@
 		"allowJs": true,
 		"allowSyntheticDefaultImports": true,
 		"declaration": false,
-		"downlevelIteration": true,
 		"esModuleInterop": true,
 		"exactOptionalPropertyTypes": true,
 		"experimentalDecorators": true,
@@ -28,13 +27,15 @@
 		"noUnusedParameters": false,
 		"outDir": "./plugins/oxc",
 		"paths": {
+			"@rules/*": ["./plugins/oxc/small-rules/rules/*"],
+			"@utilities/*": ["./plugins/oxc/small-rules/utilities/*"],
 			"#src": ["./src/index.ts"],
-			"#src/*": ["./src/*"],
+			"#src/*": ["./src/*"]
 		},
 		"plugins": [],
 		"pretty": true,
 		"resolveJsonModule": true,
-		"rootDir": "./plugins/oxc",
+		"rootDir": ".",
 		"skipLibCheck": true,
 		"sourceMap": false,
 		"strict": true,
@@ -45,8 +46,8 @@
 		"types": ["node"],
 		"useDefineForClassFields": true,
 		"useUnknownInCatchVariables": true,
-		"verbatimModuleSyntax": true,
+		"verbatimModuleSyntax": true
 	},
 	"exclude": ["**/node_modules/**"],
-	"include": ["./plugins/oxc/**/*.ts"],
+	"include": ["./plugins/**/*.ts", "./src/**/*.ts"]
 }

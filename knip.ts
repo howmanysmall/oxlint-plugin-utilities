@@ -3,11 +3,11 @@ import type { KnipConfig } from "knip";
 const configuration: KnipConfig = {
 	biome: true,
 	bumpp: true,
-	bun: true,
 	changelogithub: true,
 	commitlint: true,
-	ignoreBinaries: ["lefthook"],
+	ignoreBinaries: ["aube", "lefthook"],
 	ignoreDependencies: [],
+	ignoreFiles: ["**/reset.d.ts"],
 	lefthook: true,
 	oxlint: true,
 	project: ["src/**/*.ts", "scripts/**/*.ts"],

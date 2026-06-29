@@ -7,12 +7,12 @@
 		"perf": "error",
 		"restriction": "error",
 		"style": "error",
-		"suspicious": "error",
+		"suspicious": "error"
 	},
 	"env": {
 		"builtin": true,
 		"es2023": true,
-		"node": true,
+		"node": true
 	},
 	"extends": [],
 	"ignorePatterns": [
@@ -22,71 +22,124 @@
 		"**/node_modules/**",
 		"tests/fixtures/**/*.d.ts",
 		".context/**",
-		"plugins/oxc/small-rules.js",
-		"**/dist/**",
+		"**/dist/**"
 	],
-	"jsPlugins": ["./plugins/oxc/small-rules.js"],
+	"jsPlugins": [{ "name": "small-rules", "specifier": "@pobammer-ts/small-rules" }],
 	"options": {
 		"denyWarnings": true,
 		"maxWarnings": 0,
 		"reportUnusedDisableDirectives": "error",
 		"typeAware": true,
-		"typeCheck": true,
+		"typeCheck": true
 	},
 	"overrides": [
 		{
 			"files": ["documentation/**/*.ts", "documentation/**/*.astro"],
-			"globals": {
-				"Astro": "readonly",
-			},
+			"globals": { "Astro": "readonly" }
 		},
 		{
 			"files": ["scripts/**/*.ts"],
 			"globals": {
-				"Bun": "readonly",
+				"Bun": "readonly"
 			},
 			"rules": {
 				"complexity": "off",
 				"max-lines": "off",
 				"max-lines-per-function": "off",
 				"no-bitwise": "off",
-				"no-console": "off",
-			},
+				"no-console": "off"
+			}
 		},
 		{
 			"files": ["tests/**/*"],
 			"plugins": ["eslint", "import", "jsdoc", "node", "oxc", "promise", "typescript", "unicorn", "vitest"],
 			"rules": {
+				"max-lines-per-function": "off",
 				"vitest/consistent-each-for": "error",
 				"vitest/consistent-test-filename": "error",
+				"vitest/consistent-test-it": "error",
 				"vitest/consistent-vitest-vi": "error",
+				"vitest/expect-expect": "error",
 				"vitest/hoisted-apis-on-top": "error",
+				"vitest/max-expects": "off",
+				"vitest/max-nested-describe": "error",
+				"vitest/no-alias-methods": "error",
+				"vitest/no-commented-out-tests": "error",
+				"vitest/no-conditional-expect": "error",
+				"vitest/no-conditional-in-test": "error",
 				"vitest/no-conditional-tests": "error",
+				"vitest/no-disabled-tests": "error",
+				"vitest/no-duplicate-hooks": "error",
+				"vitest/no-focused-tests": "error",
+				"vitest/no-hooks": "error",
+				"vitest/no-identical-title": "error",
 				"vitest/no-import-node-test": "error",
 				"vitest/no-importing-vitest-globals": "off",
+				"vitest/no-interpolation-in-snapshots": "error",
+				"vitest/no-large-snapshots": "error",
+				"vitest/no-mocks-import": "error",
+				"vitest/no-restricted-matchers": "error",
+				"vitest/no-restricted-vi-methods": "error",
+				"vitest/no-standalone-expect": "error",
+				"vitest/no-test-prefixes": "error",
+				"vitest/no-test-return-statement": "error",
+				"vitest/no-unneeded-async-expect-function": "error",
 				"vitest/prefer-called-exactly-once-with": "error",
 				"vitest/prefer-called-once": "error",
 				"vitest/prefer-called-times": "error",
-				"vitest/prefer-describe-function-title": "error",
+				"vitest/prefer-called-with": "error",
+				"vitest/prefer-comparison-matcher": "error",
+				"vitest/prefer-describe-function-title": "off",
+				"vitest/prefer-each": "error",
+				"vitest/prefer-equality-matcher": "error",
+				"vitest/prefer-expect-assertions": "error",
+				"vitest/prefer-expect-resolves": "error",
 				"vitest/prefer-expect-type-of": "error",
+				"vitest/prefer-hooks-in-order": "error",
+				"vitest/prefer-hooks-on-top": "error",
 				"vitest/prefer-import-in-mock": "error",
 				"vitest/prefer-importing-vitest-globals": "error",
-				"vitest/prefer-strict-boolean-matchers": "off",
-				"vitest/prefer-to-be-falsy": "error",
+				"vitest/prefer-lowercase-title": "off",
+				"vitest/prefer-mock-promise-shorthand": "error",
+				"vitest/prefer-mock-return-shorthand": "error",
+				"vitest/prefer-snapshot-hint": "error",
+				"vitest/prefer-spy-on": "error",
+				"vitest/prefer-strict-boolean-matchers": "error",
+				"vitest/prefer-strict-equal": "error",
+				"vitest/prefer-to-be": "error",
+				"vitest/prefer-to-be-falsy": "off",
 				"vitest/prefer-to-be-object": "error",
-				"vitest/prefer-to-be-truthy": "error",
+				"vitest/prefer-to-be-truthy": "off",
+				"vitest/prefer-to-contain": "error",
+				"vitest/prefer-to-have-been-called-times": "error",
+				"vitest/prefer-to-have-length": "error",
+				"vitest/prefer-todo": "error",
 				"vitest/require-awaited-expect-poll": "error",
+				"vitest/require-hook": "off",
 				"vitest/require-local-test-context-for-concurrent-snapshots": "error",
 				"vitest/require-mock-type-parameters": "error",
 				"vitest/require-test-timeout": "error",
-				"vitest/warn-todo": "error",
-			},
+				"vitest/require-to-throw-message": "warn",
+				"vitest/require-top-level-describe": "error",
+				"vitest/valid-describe-callback": "error",
+				"vitest/valid-expect": "error",
+				"vitest/valid-expect-in-promise": "error",
+				"vitest/valid-title": "error",
+				"vitest/warn-todo": "error"
+			}
 		},
+		{
+			"files": ["tests/**/*.test-d.ts"],
+			"plugins": ["eslint", "import", "jsdoc", "node", "oxc", "promise", "typescript", "unicorn", "vitest"],
+			"rules": {
+				"vitest/prefer-expect-assertions": "off"
+			}
+		}
 	],
 	"plugins": ["eslint", "import", "jsdoc", "node", "oxc", "promise", "typescript", "unicorn"],
 	"rules": {
 		"arrow-body-style": ["error", "as-needed"],
-		"complexity": "error",
+		"complexity": ["error", { "max": 20 }],
 		"curly": ["error", "multi-line"],
 		"default-case": "off",
 		"eqeqeq": "error",
@@ -96,8 +149,8 @@
 				"IIFEs": false,
 				"max": 120,
 				"skipBlankLines": false,
-				"skipComments": false,
-			},
+				"skipComments": false
+			}
 		],
 		"eslint/no-use-before-define": "off",
 		"eslint/require-await": "off",
@@ -110,17 +163,17 @@
 				"allowArrowFunctions": false,
 				"allowTypeAnnotation": true,
 				"overrides": {
-					"namedExports": "ignore",
-				},
-			},
+					"namedExports": "ignore"
+				}
+			}
 		],
 		"id-length": [
 			"error",
 			{
 				"exceptionPatterns": ["^_"],
 				"exceptions": ["_"],
-				"max": 45,
-			},
+				"max": 45
+			}
 		],
 		"import/exports-last": "off",
 		"import/group-exports": "off",
@@ -131,8 +184,8 @@
 				"allowUnsafeDynamicCyclicDependency": true,
 				"ignoreExternal": false,
 				"ignoreTypes": true,
-				"maxDepth": 4294967295,
-			},
+				"maxDepth": 4294967295
+			}
 		],
 		"import/no-default-export": "off",
 		"import/no-named-as-default": "error",
@@ -142,8 +195,8 @@
 		"import/no-unassigned-import": [
 			"error",
 			{
-				"allow": ["**/*.css", "@total-typescript/ts-reset"],
-			},
+				"allow": ["**/*.css", "@total-typescript/ts-reset"]
+			}
 		],
 		"import/prefer-default-export": "off",
 		"init-declarations": "off",
@@ -155,23 +208,23 @@
 			{
 				"max": 400,
 				"skipBlankLines": true,
-				"skipComments": true,
-			},
+				"skipComments": true
+			}
 		],
 		"max-lines-per-function": [
 			"warn",
 			{
 				"max": 75,
 				"skipBlankLines": true,
-				"skipComments": true,
-			},
+				"skipComments": true
+			}
 		],
 		"max-params": [
 			"error",
 			{
 				"countVoidThis": false,
-				"max": 7,
-			},
+				"max": 7
+			}
 		],
 		"max-statements": ["off", { "max": 15 }],
 		"new-cap": "error",
@@ -199,8 +252,8 @@
 			"error",
 			{
 				"allowSeparateTypeImports": true,
-				"includeExports": false,
-			},
+				"includeExports": false
+			}
 		],
 		"no-else-return": "error",
 		"no-empty": "error",
@@ -281,9 +334,9 @@
 			"error",
 			{
 				"bannedTypes": {
-					"Omit": "Except",
-				},
-			},
+					"Omit": "Except"
+				}
+			}
 		],
 		"small-rules/no-commented-code": "error",
 		"small-rules/prevent-abbreviations": "error",
@@ -293,8 +346,8 @@
 				"allowSeparatedGroups": true,
 				"ignoreCase": true,
 				"ignoreDeclarationSort": true,
-				"ignoreMemberSort": false,
-			},
+				"ignoreMemberSort": false
+			}
 		],
 		"sort-keys": [
 			"error",
@@ -303,16 +356,16 @@
 				"allowLineSeparatedGroups": true,
 				"caseSensitive": false,
 				"minKeys": 2,
-				"natural": true,
-			},
+				"natural": true
+			}
 		],
 		"switch-exhaustiveness-check": "off",
 		"typescript/array-type": [
 			"error",
 			{
 				"default": "generic",
-				"readonly": "generic",
-			},
+				"readonly": "generic"
+			}
 		],
 		// nursery... obviously. because it doesn't work.
 		"typescript/consistent-return": "error",
@@ -419,7 +472,7 @@
 		"use-isnan": "error",
 		"valid-typeof": "error",
 		"vars-on-top": "error",
-		"yoda": "error",
+		"yoda": "error"
 	},
 	"settings": {
 		"jsdoc": {
@@ -430,7 +483,7 @@
 			"ignoreReplacesDocs": true,
 			"implementsReplacesDocs": false,
 			"overrideReplacesDocs": true,
-			"tagNamePreference": {},
-		},
-	},
+			"tagNamePreference": {}
+		}
+	}
 }
