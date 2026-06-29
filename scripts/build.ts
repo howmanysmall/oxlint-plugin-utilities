@@ -8,16 +8,16 @@ import { Command } from "@cliffy/command";
 import { basename, extname, resolve } from "@std/path";
 import { type } from "arktype";
 import { consola } from "consola";
+import { bold, cyan, gray, green, magenta, red, yellow } from "picocolors";
 import prettyBytes from "pretty-bytes";
 import prettyMilliseconds from "pretty-ms";
 import { build } from "tsdown";
-import { bold, cyan, gray, green, magenta, red, yellow } from "yoctocolors";
 import { $ } from "zx";
 
 import { createBuildMetadataPlugin } from "./plugins/build/build-metadata";
 import { createPreserveCommentsPlugin } from "./plugins/build/preserve-comments";
 
-import type { Format } from "yoctocolors";
+import type { Formatter } from "picocolors/types";
 
 const scriptPath = import.meta.filename;
 const scriptName = basename(scriptPath, extname(scriptPath));
@@ -395,7 +395,7 @@ function printBuildSummary(buildResult: BuildResult, verbose: boolean): void {
 	if (verbose) {
 		consola.info(bold("Output files:"));
 		for (const { path, size } of files) {
-			const color = path.endsWith(".js.map") ? gray : path.endsWith(".d.ts") ? yellow : cyan;
+			const color = getColor(path);
 			consola.log(`  ${color(path)} ${gray(`(${prettyBytes(size)})`)}`);
 		}
 		consola.log("");
@@ -409,7 +409,10 @@ function printBuildSummary(buildResult: BuildResult, verbose: boolean): void {
 	consola.log(`  ${green("Duration:")} ${prettyMilliseconds(buildResult.duration)}`);
 }
 
-function getColor(path: string): Format {}
+function getColor(path: string): Formatter {
+	if (path.endsWith(".js.map")) return gray;
+	return path.endsWith(".d.ts") ? yellow : cyan;
+}
 
 const command = new Command()
 	.name(scriptName)

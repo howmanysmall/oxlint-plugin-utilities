@@ -99,5 +99,5 @@ pre-push:
     - name: test
       run: |
         if echo {push_files} | grep -qE '\.(ts|tsx|js|jsx|json|jsonc|toml)$'; then
-          nr vitest run
+          nr test
         fi
