@@ -1,6 +1,6 @@
 {
 	"name": "oxlint-plugin-utilities",
-	"version": "1.0.0",
+	"version": "1.1.0",
 	"description": "A smarter wrapper around Oxlint's JS plugins types.",
 	"keywords": [
 		"lint",
