@@ -80,7 +80,6 @@ pre-push:
     - name: oxc
       run: |
         if echo {push_files} | grep -qE '\.(js|jsx|ts|tsx)$'; then
-          nr build:oxc --minify
           nr oxc .
         fi
 
