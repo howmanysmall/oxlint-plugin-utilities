@@ -3,6 +3,7 @@ _.file = { path = ".env" }
 _.path = ["{{config_root}}/node_modules/.bin", "{{cwd}}/node_modules/.bin"]
 
 [tools]
+aube = "1.25.1"
 "github:howmanysmall/npm-registry-mcp" = "latest"
 "github:howmanysmall/pullhook" = "latest"
 bun = "1.3.14"
