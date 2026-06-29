@@ -13,6 +13,7 @@ function stringifyUnknownError(error: unknown): string {
 
 function getGitCommit(): string {
 	try {
+		// oxlint-disable-next-line node/no-sync -- git is required for build metadata
 		return execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim();
 	} catch (error) {
 		console.warn(`[build-metadata] Failed to read git commit - ${stringifyUnknownError(error)}`);
@@ -22,7 +23,7 @@ function getGitCommit(): string {
 
 export function createBuildMetadataPlugin({ version }: BuildMetadataOptions): TsdownPlugin {
 	return {
-		generateBundle() {
+		generateBundle(): void {
 			const metadata = {
 				commit: getGitCommit(),
 				time: Temporal.Now.instant().toString({ smallestUnit: "millisecond" }),

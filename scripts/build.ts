@@ -2,10 +2,10 @@
 
 import { mkdtemp, readdir, readFile, rm, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { basename, extname, resolve } from "node:path";
 import { performance } from "node:perf_hooks";
 import { argv, exit } from "node:process";
 import { Command } from "@cliffy/command";
+import { basename, extname, resolve } from "@std/path";
 import { type } from "arktype";
 import { consola } from "consola";
 import prettyBytes from "pretty-bytes";
@@ -16,6 +16,8 @@ import { $ } from "zx";
 
 import { createBuildMetadataPlugin } from "./plugins/build/build-metadata";
 import { createPreserveCommentsPlugin } from "./plugins/build/preserve-comments";
+
+import type { Format } from "yoctocolors";
 
 const scriptPath = import.meta.filename;
 const scriptName = basename(scriptPath, extname(scriptPath));
@@ -228,7 +230,7 @@ function validatePackedFiles(packedFiles: ReadonlyArray<string>): void {
 			throw error;
 		}
 
-		if (!packedFile.startsWith(`${distributionDirectory}/`) && !npmMetadataFiles.has(packedFile)) {
+		if (!(packedFile.startsWith(`${distributionDirectory}/`) || npmMetadataFiles.has(packedFile))) {
 			const error = new Error(`Packed tarball includes unexpected file: ${packedFile}`);
 			Error.captureStackTrace(error, validatePackedFiles);
 			throw error;
@@ -406,6 +408,8 @@ function printBuildSummary(buildResult: BuildResult, verbose: boolean): void {
 	consola.log(`  ${magenta("Total size:")} ${prettyBytes(totalSize)}`);
 	consola.log(`  ${green("Duration:")} ${prettyMilliseconds(buildResult.duration)}`);
 }
+
+function getColor(path: string): Format {}
 
 const command = new Command()
 	.name(scriptName)

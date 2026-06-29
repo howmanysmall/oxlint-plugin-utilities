@@ -5,22 +5,13 @@ _.path = ["{{config_root}}/node_modules/.bin", "{{cwd}}/node_modules/.bin"]
 [tools]
 "github:howmanysmall/npm-registry-mcp" = "latest"
 "github:howmanysmall/pullhook" = "latest"
-aube = "latest"
 bun = "1.3.14"
 lefthook = "latest"
-node = "latest"
 npm = "latest"
 rumdl = "latest"
 tombi = "latest"
+pnpm = "11.9.0"
 
 [settings]
 auto_install = false
 lockfile = true
-
-[tasks.lockfile]
-description = "Regenerate lockfile checksums for all tools, then install"
-run = ["mise lock", "mise install"]
-
-[tasks.lockfile-tool]
-description = "Regenerate lockfile checksums for a specific tool, then install"
-run = ["mise lock {{arg(name='tool')}}", "mise install"]

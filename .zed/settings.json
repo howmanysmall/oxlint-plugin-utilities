@@ -292,8 +292,8 @@
 		},
 		"biome": {
 			"binary": {
-				"arguments": ["run", "biome", "lsp-proxy"],
-				"path": "aube"
+				"arguments": ["--run", "biome", "--", "lsp-proxy"],
+				"path": "node"
 			},
 			"settings": {
 				"biome": {
@@ -306,8 +306,8 @@
 		"json-language-server": {},
 		"oxfmt": {
 			"binary": {
-				"arguments": ["run", "format", "--lsp"],
-				"path": "aube"
+				"arguments": ["--run", "oxfmt", "--", "--lsp"],
+				"path": "node"
 			},
 			"initialization_options": {
 				"settings": {
@@ -318,8 +318,8 @@
 		},
 		"oxlint": {
 			"binary": {
-				"arguments": ["run", "oxc", "--", "--lsp"],
-				"path": "aube"
+				"arguments": ["--run", "oxlint", "--", "--lsp"],
+				"path": "node"
 			},
 			"initialization_options": {
 				"settings": {
