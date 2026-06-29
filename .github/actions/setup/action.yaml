@@ -19,7 +19,7 @@ runs:
       with:
         cache: false
         install: true
-        install_args: node aube
+        install_args: node aube lefthook
         version: ${{ inputs.mise-version }}
 
     - name: Restore Aube cache
