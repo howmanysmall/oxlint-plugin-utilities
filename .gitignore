@@ -146,3 +146,5 @@ opensrc/
 documentation/.astro
 *.afdesign~lock~
 screenshots/
+
+.omo/

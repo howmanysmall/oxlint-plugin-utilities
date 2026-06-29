@@ -143,7 +143,7 @@ export function createPreserveCommentsPlugin({ enabled }: PreserveCommentsOption
 	const storedComments = new Map<string, string>();
 
 	return {
-		generateBundle(_outputOptions, bundle: Rolldown.OutputBundle) {
+		generateBundle(_outputOptions, bundle: Rolldown.OutputBundle): void {
 			if (!enabled || storedComments.size === 0) return;
 
 			for (const assetOrChunk of Object.values(bundle)) {
@@ -152,8 +152,8 @@ export function createPreserveCommentsPlugin({ enabled }: PreserveCommentsOption
 			}
 		},
 		name: "preserve-comments",
-		transform(code: string, id: string) {
-			if (!enabled || !shouldExtractComments(id)) return;
+		transform(code: string, id: string): void {
+			if (!(enabled && shouldExtractComments(id))) return;
 
 			for (const [name, comment] of getStoredComments(code)) storedComments.set(name, comment);
 		},

@@ -7,17 +7,28 @@
 	"endOfLine": "lf",
 	"htmlWhitespaceSensitivity": "css",
 	"ignorePatterns": [
-		"**/dist/**",
-		"**/node_modules/**",
 		"**/*.{md,toml}",
-		"**/*.json",
-		".context/**",
-		"!package.json",
-		"!.zed/settings.json",
-		"aube-lock.yaml",
+		"**/do-not-sync-ever/**",
+		".github/workflows/release.yml",
+		"**/aube-lock.yaml",
+		"skills-lock.json",
+		".vscode/*.json",
+		"tests/fixtures/**"
 	],
 	"insertFinalNewline": true,
-	"jsdoc": true,
+	"jsdoc": {
+		"addDefaultToDescription": true,
+		"bracketSpacing": false,
+		"capitalizeDescriptions": true,
+		"commentLineStrategy": "singleLine",
+		"descriptionTag": false,
+		"descriptionWithDot": true,
+		"keepUnparsableExampleIndent": false,
+		"lineWrappingStyle": "greedy",
+		"preferCodeFences": true,
+		"separateReturnsFromParam": false,
+		"separateTagGroups": false
+	},
 	"jsxSingleQuote": false,
 	"objectWrap": "preserve",
 	"overrides": [
@@ -25,18 +36,24 @@
 			"files": ["**/*.{yaml,yml}"],
 			"options": {
 				"tabWidth": 2,
-				"useTabs": false,
-			},
+				"useTabs": false
+			}
 		},
 		{
 			"files": ["**/*.jsonc"],
 			"options": {
-				"trailingComma": "none",
-			},
+				"trailingComma": "all"
+			}
 		},
+		{
+			"files": [".oxfmtrc.json", "biome.jsonc"],
+			"options": {
+				"trailingComma": "none"
+			}
+		}
 	],
 	"printWidth": 120,
-	"proseWrap": "always",
+	"proseWrap": "preserve",
 	"quoteProps": "as-needed",
 	"semi": true,
 	"singleAttributePerLine": false,
@@ -57,11 +74,11 @@
 					"svelte/**",
 					"@sveltejs/**",
 					"solid-js",
-					"@solidjs/**",
+					"@solidjs/**"
 				],
 				"groupName": "framework",
 				"modifiers": ["value"],
-				"selector": "external",
+				"selector": "external"
 			},
 			{
 				"elementNamePattern": [
@@ -75,12 +92,12 @@
 					"playwright",
 					"@playwright/**",
 					"cypress",
-					"@cypress/**",
+					"@cypress/**"
 				],
 				"groupName": "testing",
 				"modifiers": ["value"],
-				"selector": "external",
-			},
+				"selector": "external"
+			}
 		],
 		"groups": [
 			"side_effect",
@@ -112,7 +129,7 @@
 			"type-import",
 			{ "newlinesBetween": true },
 
-			"unknown",
+			"unknown"
 		],
 		"ignoreCase": true,
 		"internalPattern": ["@/", "~/"],
@@ -120,10 +137,10 @@
 		"order": "asc",
 		"partitionByComment": false,
 		"partitionByNewline": false,
-		"sortSideEffects": false,
+		"sortSideEffects": false
 	},
 	"sortPackageJson": true,
 	"tabWidth": 4,
 	"trailingComma": "all",
-	"useTabs": true,
+	"useTabs": true
 }

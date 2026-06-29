@@ -7,12 +7,12 @@
 		"perf": "error",
 		"restriction": "error",
 		"style": "error",
-		"suspicious": "error",
+		"suspicious": "error"
 	},
 	"env": {
 		"builtin": true,
 		"es2023": true,
-		"node": true,
+		"node": true
 	},
 	"extends": [],
 	"ignorePatterns": [
@@ -22,7 +22,7 @@
 		"**/node_modules/**",
 		"tests/fixtures/**/*.d.ts",
 		".context/**",
-		"**/dist/**",
+		"**/dist/**"
 	],
 	"jsPlugins": [{ "name": "small-rules", "specifier": "@pobammer-ts/small-rules" }],
 	"options": {
@@ -30,25 +30,25 @@
 		"maxWarnings": 0,
 		"reportUnusedDisableDirectives": "error",
 		"typeAware": true,
-		"typeCheck": true,
+		"typeCheck": true
 	},
 	"overrides": [
 		{
 			"files": ["documentation/**/*.ts", "documentation/**/*.astro"],
-			"globals": { "Astro": "readonly" },
+			"globals": { "Astro": "readonly" }
 		},
 		{
 			"files": ["scripts/**/*.ts"],
 			"globals": {
-				"Bun": "readonly",
+				"Bun": "readonly"
 			},
 			"rules": {
 				"complexity": "off",
 				"max-lines": "off",
 				"max-lines-per-function": "off",
 				"no-bitwise": "off",
-				"no-console": "off",
-			},
+				"no-console": "off"
+			}
 		},
 		{
 			"files": ["tests/**/*"],
@@ -125,16 +125,16 @@
 				"vitest/valid-expect": "error",
 				"vitest/valid-expect-in-promise": "error",
 				"vitest/valid-title": "error",
-				"vitest/warn-todo": "error",
-			},
+				"vitest/warn-todo": "error"
+			}
 		},
 		{
 			"files": ["tests/**/*.test-d.ts"],
 			"plugins": ["eslint", "import", "jsdoc", "node", "oxc", "promise", "typescript", "unicorn", "vitest"],
 			"rules": {
-				"vitest/prefer-expect-assertions": "off",
-			},
-		},
+				"vitest/prefer-expect-assertions": "off"
+			}
+		}
 	],
 	"plugins": ["eslint", "import", "jsdoc", "node", "oxc", "promise", "typescript", "unicorn"],
 	"rules": {
@@ -149,8 +149,8 @@
 				"IIFEs": false,
 				"max": 120,
 				"skipBlankLines": false,
-				"skipComments": false,
-			},
+				"skipComments": false
+			}
 		],
 		"eslint/no-use-before-define": "off",
 		"eslint/require-await": "off",
@@ -163,17 +163,17 @@
 				"allowArrowFunctions": false,
 				"allowTypeAnnotation": true,
 				"overrides": {
-					"namedExports": "ignore",
-				},
-			},
+					"namedExports": "ignore"
+				}
+			}
 		],
 		"id-length": [
 			"error",
 			{
 				"exceptionPatterns": ["^_"],
 				"exceptions": ["_"],
-				"max": 45,
-			},
+				"max": 45
+			}
 		],
 		"import/exports-last": "off",
 		"import/group-exports": "off",
@@ -184,8 +184,8 @@
 				"allowUnsafeDynamicCyclicDependency": true,
 				"ignoreExternal": false,
 				"ignoreTypes": true,
-				"maxDepth": 4294967295,
-			},
+				"maxDepth": 4294967295
+			}
 		],
 		"import/no-default-export": "off",
 		"import/no-named-as-default": "error",
@@ -195,8 +195,8 @@
 		"import/no-unassigned-import": [
 			"error",
 			{
-				"allow": ["**/*.css", "@total-typescript/ts-reset"],
-			},
+				"allow": ["**/*.css", "@total-typescript/ts-reset"]
+			}
 		],
 		"import/prefer-default-export": "off",
 		"init-declarations": "off",
@@ -208,23 +208,23 @@
 			{
 				"max": 400,
 				"skipBlankLines": true,
-				"skipComments": true,
-			},
+				"skipComments": true
+			}
 		],
 		"max-lines-per-function": [
 			"warn",
 			{
 				"max": 75,
 				"skipBlankLines": true,
-				"skipComments": true,
-			},
+				"skipComments": true
+			}
 		],
 		"max-params": [
 			"error",
 			{
 				"countVoidThis": false,
-				"max": 7,
-			},
+				"max": 7
+			}
 		],
 		"max-statements": ["off", { "max": 15 }],
 		"new-cap": "error",
@@ -252,8 +252,8 @@
 			"error",
 			{
 				"allowSeparateTypeImports": true,
-				"includeExports": false,
-			},
+				"includeExports": false
+			}
 		],
 		"no-else-return": "error",
 		"no-empty": "error",
@@ -334,9 +334,9 @@
 			"error",
 			{
 				"bannedTypes": {
-					"Omit": "Except",
-				},
-			},
+					"Omit": "Except"
+				}
+			}
 		],
 		"small-rules/no-commented-code": "error",
 		"small-rules/prevent-abbreviations": "error",
@@ -346,8 +346,8 @@
 				"allowSeparatedGroups": true,
 				"ignoreCase": true,
 				"ignoreDeclarationSort": true,
-				"ignoreMemberSort": false,
-			},
+				"ignoreMemberSort": false
+			}
 		],
 		"sort-keys": [
 			"error",
@@ -356,16 +356,16 @@
 				"allowLineSeparatedGroups": true,
 				"caseSensitive": false,
 				"minKeys": 2,
-				"natural": true,
-			},
+				"natural": true
+			}
 		],
 		"switch-exhaustiveness-check": "off",
 		"typescript/array-type": [
 			"error",
 			{
 				"default": "generic",
-				"readonly": "generic",
-			},
+				"readonly": "generic"
+			}
 		],
 		// nursery... obviously. because it doesn't work.
 		"typescript/consistent-return": "error",
@@ -472,7 +472,7 @@
 		"use-isnan": "error",
 		"valid-typeof": "error",
 		"vars-on-top": "error",
-		"yoda": "error",
+		"yoda": "error"
 	},
 	"settings": {
 		"jsdoc": {
@@ -483,7 +483,7 @@
 			"ignoreReplacesDocs": true,
 			"implementsReplacesDocs": false,
 			"overrideReplacesDocs": true,
-			"tagNamePreference": {},
-		},
-	},
+			"tagNamePreference": {}
+		}
+	}
 }

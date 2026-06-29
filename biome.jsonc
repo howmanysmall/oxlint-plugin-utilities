@@ -44,7 +44,7 @@
 		"enabled": true,
 		"expand": "auto",
 		"formatWithErrors": true,
-		"includes": ["**", "!**/*.js", "!**/{dist,do-not-sync-ever,garbage,node_modules}/**"],
+		"includes": ["**", "!**/*.js", "!**/{dist,do-not-sync-ever,garbage,node_modules}/**", "!src/types.ts"],
 		"indentStyle": "tab",
 		"indentWidth": 4,
 		"lineEnding": "lf",
@@ -292,7 +292,7 @@
 				"useBlockStatements": "off",
 				"useConsistentEnumValueType": "error",
 				"useConsistentMemberAccessibility": "off",
-				"useConsistentMethodSignatures": "error",
+				"useConsistentMethodSignatures": "off",
 				"useConst": {
 					"fix": "safe",
 					"level": "error"
@@ -319,6 +319,7 @@
 				"noDuplicateEnumValues": "error",
 				"noEmptyBlockStatements": "error",
 				"noEqualsToNull": "error",
+				"noExplicitAny": "off",
 				"noForIn": "error",
 				"noNestedPromises": "error",
 				"noParametersOnlyUsedInRecursion": "error",

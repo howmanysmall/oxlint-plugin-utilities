@@ -27,8 +27,7 @@ runs:
       uses: actions/cache/restore@v5
       with:
         path: ~/.cache/aube
-        key:
-          ${{ inputs.cache-version }}-${{ runner.os }}-${{ runner.arch }}-aube-${{ hashFiles('aube-lock.yaml',
+        key: ${{ inputs.cache-version }}-${{ runner.os }}-${{ runner.arch }}-aube-${{ hashFiles('aube-lock.yaml',
           'aube-workspace.yaml', 'mise.lock', 'mise.toml', 'package.json') }}
 
     - name: Install dependencies
@@ -36,8 +35,7 @@ runs:
       run: aube ci
 
     - name: Save Aube cache
-      if:
-        steps.aube-cache.outputs.cache-hit != 'true' && (github.event_name != 'pull_request' ||
+      if: steps.aube-cache.outputs.cache-hit != 'true' && (github.event_name != 'pull_request' ||
         github.event.pull_request.head.repo.full_name == github.repository)
       uses: actions/cache/save@v5
       with:

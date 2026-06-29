@@ -8,8 +8,8 @@ import type { Plugin, Rule } from "./types";
  * No-op function, just to provide type safety. Input is passed through unchanged. This is a stronger typed version of
  * the original definePlugin.
  *
- * @template TRules - The rules of the plugin
- * @param plugin - Plugin to define
+ * @template TRules - The rules of the plugin.
+ * @param plugin - Plugin to define.
  * @returns Same plugin as passed in
  */
 // oxlint-disable-next-line no-explicit-any

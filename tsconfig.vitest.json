@@ -4,12 +4,12 @@
 		"noUncheckedIndexedAccess": true,
 		"paths": {
 			"#src": ["./src/index.ts"],
-			"#src/*": ["./src/*"],
+			"#src/*": ["./src/*"]
 		},
 		"rootDir": ".",
-		"types": ["node", "vitest/globals"],
+		"types": ["node", "vitest/globals"]
 	},
 	"exclude": ["dist", "node_modules"],
 	"extends": "./tsconfig.base.json",
-	"include": ["src/**/*.ts", "tests/**/*.ts", "tests/**/*.test-d.ts", "vitest.config.ts"],
+	"include": ["src/**/*.ts", "tests/**/*.ts", "tests/**/*.test-d.ts", "vitest.config.ts"]
 }

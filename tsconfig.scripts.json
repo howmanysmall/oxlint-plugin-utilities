@@ -4,8 +4,8 @@
 		"declarationMap": false,
 		"noEmit": true,
 		"resolveJsonModule": true,
-		"rootDir": "scripts",
+		"rootDir": "scripts"
 	},
 	"extends": "./tsconfig.base.json",
-	"include": ["scripts/**/*.ts"],
+	"include": ["scripts/**/*.ts"]
 }
