@@ -11,6 +11,7 @@ lefthook = "latest"
 npm = "latest"
 rumdl = "latest"
 tombi = "latest"
+node = "25"
 
 [settings]
 auto_install = false
