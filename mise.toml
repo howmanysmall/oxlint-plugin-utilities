@@ -12,6 +12,7 @@ npm = "latest"
 rumdl = "latest"
 tombi = "latest"
 node = "25"
+zizmor = "latest"
 
 [settings]
 auto_install = false
