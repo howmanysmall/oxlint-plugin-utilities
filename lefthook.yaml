@@ -1,7 +1,7 @@
 commit-msg:
   jobs:
     - name: commitlint
-      run: aube run commitlint --edit {1}
+      run: nr commitlint --edit {1}
 
 min_version: 2.1.4
 
@@ -20,7 +20,7 @@ pre-commit:
         - "*.grit"
         - "*.code-workspace"
       name: biome-json
-      run: aube run biome check --write --no-errors-on-unmatched {staged_files}
+      run: nr biome check --write --no-errors-on-unmatched {staged_files}
       stage_fixed: true
 
     - glob:
@@ -30,16 +30,16 @@ pre-commit:
         - "*.tsx"
       name: js-ts-fix
       run: |
-        aube run oxc --fix {staged_files}
-        aube run biome check --write --no-errors-on-unmatched {staged_files}
-        aube run format {staged_files}
+        nr oxc --fix {staged_files}
+        nr biome check --write --no-errors-on-unmatched {staged_files}
+        nr format {staged_files}
       stage_fixed: true
 
     - glob:
         - "*.json5"
         - "*.mdx"
       name: format-json5-mdx
-      run: aube run format {staged_files}
+      run: nr format {staged_files}
       stage_fixed: true
 
     - glob: "*.md"
@@ -60,7 +60,7 @@ pre-commit:
         - "*.yaml"
         - "*.yml"
       name: yaml-format
-      run: aube run format {staged_files}
+      run: nr format {staged_files}
       stage_fixed: true
 
 pre-push:
@@ -68,36 +68,36 @@ pre-push:
     - name: build
       run: |
         if echo {push_files} | grep -qE '\.(ts|tsx|js|jsx|json|jsonc|toml)$'; then
-          aube run build
+          nr build
         fi
 
     - name: biome-ci
       run: |
         if echo {push_files} | grep -qE '\.(css|html|json|jsonc|grit|code-workspace|js|jsx|ts|tsx)$'; then
-          aube run biome ci
+          nr biome ci
         fi
 
     - name: oxc
       run: |
         if echo {push_files} | grep -qE '\.(js|jsx|ts|tsx)$'; then
-          aube run build:oxc --minify
-          aube run oxc .
+          nr build:oxc --minify
+          nr oxc .
         fi
 
     - name: type-check
       run: |
         if echo {push_files} | grep -qE '\.(ts|tsx|js|jsx|json|jsonc)$'; then
-          aube run type-check
+          nr type-check
         fi
 
     - name: knip
       run: |
         if echo {push_files} | grep -qE '\.(ts|tsx|js|jsx|json|jsonc|toml)$'; then
-          aube run knip
+          nr knip
         fi
 
     - name: test
       run: |
         if echo {push_files} | grep -qE '\.(ts|tsx|js|jsx|json|jsonc|toml)$'; then
-          aube run vitest run
+          nr vitest run
         fi

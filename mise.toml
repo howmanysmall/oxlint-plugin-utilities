@@ -10,7 +10,6 @@ lefthook = "latest"
 npm = "latest"
 rumdl = "latest"
 tombi = "latest"
-pnpm = "11.9.0"
 
 [settings]
 auto_install = false
