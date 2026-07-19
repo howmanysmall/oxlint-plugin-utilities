@@ -1,14 +1,22 @@
-allowBuilds: {}
-enableGlobalVirtualStore: true
-packages: []
-fetchRetries: 5
-fetchRetryMintimeout: 1000
-fetchRetryMaxtimeout: 30000
-fetchTimeout: 60000
-trustPolicyExclude: []
-patchedDependencies:
-  package-manager-detector@1.6.0: patches/package-manager-detector@1.6.0.patch
 blockExoticSubdeps: true
+strictSsl: true
+trustPolicy: no-downgrade
+trustPolicyIgnoreAfter: 10080
+trustPolicyExclude:
+  - skills
+
+packages:
+  - .
+
+# Only allow specific packages to run install scripts
+allowBuilds: {}
+
+strictDepBuilds: true
+strictPeerDependencies: false
+
+# Global virtual store (pnpm's node_modules/.pnpm equivalent)
+enableGlobalVirtualStore: true
+
 minimumReleaseAge: 1440
 minimumReleaseAgeExclude:
   - "@biomejs/biome"
@@ -21,26 +29,6 @@ minimumReleaseAgeExclude:
   - "@biomejs/cli-linux-x64-musl"
   - "@biomejs/cli-win32-arm64"
   - "@biomejs/cli-win32-x64"
-  - "@oxc-parser/binding-android-arm-eabi"
-  - "@oxc-parser/binding-android-arm64"
-  - "@oxc-parser/binding-darwin-arm64"
-  - "@oxc-parser/binding-darwin-x64"
-  - "@oxc-parser/binding-freebsd-x64"
-  - "@oxc-parser/binding-linux-arm-gnueabihf"
-  - "@oxc-parser/binding-linux-arm-musleabihf"
-  - "@oxc-parser/binding-linux-arm64-gnu"
-  - "@oxc-parser/binding-linux-arm64-musl"
-  - "@oxc-parser/binding-linux-ppc64-gnu"
-  - "@oxc-parser/binding-linux-riscv64-gnu"
-  - "@oxc-parser/binding-linux-riscv64-musl"
-  - "@oxc-parser/binding-linux-s390x-gnu"
-  - "@oxc-parser/binding-linux-x64-gnu"
-  - "@oxc-parser/binding-linux-x64-musl"
-  - "@oxc-parser/binding-openharmony-arm64"
-  - "@oxc-parser/binding-wasm32-wasi"
-  - "@oxc-parser/binding-win32-arm64-msvc"
-  - "@oxc-parser/binding-win32-ia32-msvc"
-  - "@oxc-parser/binding-win32-x64-msvc"
   - "@oxfmt/binding-android-arm-eabi"
   - "@oxfmt/binding-android-arm64"
   - "@oxfmt/binding-darwin-arm64"
@@ -69,13 +57,19 @@ minimumReleaseAgeExclude:
   - "@typescript/native-preview-win32-arm64"
   - "@typescript/native-preview-win32-x64"
   - oxfmt
+  - oxlint
+  - oxlint-plugin-utilities
+  - skills
 
 minimumReleaseAgeStrict: true
+
+# Use time-based resolution for reproducible installs
 resolutionMode: time-based
+
+fetchRetries: 5
+fetchRetryMintimeout: 1000
+fetchRetryMaxtimeout: 30000
+fetchTimeout: 60000
+
 strictStorePkgContentCheck: true
-strictDepBuilds: true
-strictPeerDependencies: true
-strictSsl: true
-trustPolicy: no-downgrade
-trustPolicyIgnoreAfter: 10080
 verifyStoreIntegrity: true

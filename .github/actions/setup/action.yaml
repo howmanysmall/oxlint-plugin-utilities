@@ -1,5 +1,5 @@
 name: Setup Build Environment
-description: Setup mise, Aube, and dependency caches
+description: Setup mise, pnpm, and dependency caches
 
 inputs:
   cache-version:
@@ -15,29 +15,34 @@ runs:
   using: composite
   steps:
     - name: Setup mise
-      uses: jdx/mise-action@v4
+      uses: jdx/mise-action@dad1bfd3df957f44999b559dd69dc1671cb4e9ea # v4.2.1
       with:
         cache: false
         install: true
-        install_args: node aube lefthook bun
+        install_args: node pnpm bun ni nub hk
         version: ${{ inputs.mise-version }}
 
-    - name: Restore Aube cache
-      id: aube-cache
-      uses: actions/cache/restore@v5
+    - name: Resolve pnpm store path
+      id: pnpm-store
+      shell: bash
+      run: echo "path=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+
+    - name: Restore pnpm store
+      id: pnpm-cache
+      uses: actions/cache/restore@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
       with:
-        path: ~/.cache/aube
-        key: ${{ inputs.cache-version }}-${{ runner.os }}-${{ runner.arch }}-aube-${{ hashFiles('aube-lock.yaml',
-          'aube-workspace.yaml', 'mise.lock', 'mise.toml', 'package.json') }}
+        path: ${{ steps.pnpm-store.outputs.path }}
+        key: ${{ inputs.cache-version }}-${{ runner.os }}-${{ runner.arch }}-pnpm-${{ hashFiles('pnpm-lock.yaml',
+          'pnpm-workspace.yaml', 'mise.lock', 'mise.toml', 'package.json') }}
 
     - name: Install dependencies
       shell: bash
-      run: aube ci
+      run: pnpm install --frozen-lockfile
 
-    - name: Save Aube cache
-      if: steps.aube-cache.outputs.cache-hit != 'true' && (github.event_name != 'pull_request' ||
+    - name: Save pnpm store
+      if: steps.pnpm-cache.outputs.cache-hit != 'true' && (github.event_name != 'pull_request' ||
         github.event.pull_request.head.repo.full_name == github.repository)
-      uses: actions/cache/save@v5
+      uses: actions/cache/save@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
       with:
-        path: ~/.cache/aube
-        key: ${{ steps.aube-cache.outputs.cache-primary-key }}
+        path: ${{ steps.pnpm-store.outputs.path }}
+        key: ${{ steps.pnpm-cache.outputs.cache-primary-key }}

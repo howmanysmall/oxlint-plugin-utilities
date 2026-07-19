@@ -34,9 +34,8 @@
 		"access": "public"
 	},
 	"scripts": {
-		"attw": "attw",
 		"biome": "biome",
-		"build": "jiti ./scripts/build.ts",
+		"build": "tsdown",
 		"changelogithub": "changelogithub",
 		"commitlint": "commitlint",
 		"format": "oxfmt --no-error-on-unmatched-pattern",
@@ -45,9 +44,8 @@
 		"oxc": "oxlint --no-error-on-unmatched-pattern",
 		"oxfmt": "oxfmt",
 		"oxlint": "oxlint",
-		"prepare": "lefthook install",
-		"prepublishOnly": "nr build -- --package-checks",
-		"publint": "publint",
+		"prepare": "hk install --mise",
+		"prepublishOnly": "nr build",
 		"release": "bumpp",
 		"test": "nr build && vitest run",
 		"type-check": "tsgo --noEmit"
@@ -57,10 +55,8 @@
 		"type-fest": "5.7.0"
 	},
 	"devDependencies": {
-		"@antfu/ni": "30.2.0",
-		"@arethetypeswrong/cli": "0.18.4",
+		"@arethetypeswrong/core": "0.18.4",
 		"@biomejs/biome": "2.5.1",
-		"@cliffy/command": "jsr:1.2.1",
 		"@commitlint/config-conventional": "21.1.0",
 		"@commitlint/types": "21.1.0",
 		"@pobammer-ts/small-rules": "2.1.0",
@@ -69,24 +65,21 @@
 		"@types/node": "25.9.3",
 		"@typescript/native-preview": "7.0.0-dev.20260629.1",
 		"@vitest/coverage-v8": "4.1.9",
-		"arktype": "2.2.1",
 		"bumpp": "11.1.0",
 		"changelogithub": "14.0.0",
 		"commitlint": "21.1.0",
-		"consola": "3.4.2",
-		"jiti": "2.7.0",
+		"eslint-plugin-antfu": "^3.2.3",
+		"eslint-plugin-sonarjs": "^4.2.0",
+		"eslint-plugin-unused-imports": "^4.4.1",
 		"knip": "6.23.0",
 		"oxfmt": "0.56.0",
 		"oxlint": "1.71.0",
 		"oxlint-tsgolint": "0.23.0",
-		"picocolors": "1.1.1",
-		"pretty-bytes": "7.1.0",
-		"pretty-ms": "9.3.0",
 		"publint": "0.3.21",
+		"skills": "1.5.19",
 		"temporal-polyfill": "1.0.1",
 		"tsdown": "0.22.3",
-		"vitest": "4.1.9",
-		"zx": "8.8.5"
+		"vitest": "4.1.9"
 	},
 	"peerDependencies": {
 		"typescript": ">=5 <8"
@@ -94,5 +87,5 @@
 	"engines": {
 		"node": ">=18"
 	},
-	"packageManager": "aube@1.25.1"
+	"packageManager": "pnpm@11.15.0"
 }

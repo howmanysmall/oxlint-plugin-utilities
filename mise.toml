@@ -1,19 +1,33 @@
 [env]
 _.file = { path = ".env" }
 _.path = ["{{config_root}}/node_modules/.bin", "{{cwd}}/node_modules/.bin"]
-
-[tools]
-aube = "1.25.1"
-"github:howmanysmall/npm-registry-mcp" = "latest"
-"github:howmanysmall/pullhook" = "latest"
-bun = "1.3.14"
-lefthook = "latest"
-npm = "latest"
-rumdl = "latest"
-tombi = "latest"
-node = "25"
-zizmor = "latest"
+HK_MISE = 1
 
 [settings]
 auto_install = false
+experimental = true
+github_attestations = false
 lockfile = true
+
+[tools]
+"cargo:similarity-ts" = "latest"
+"github:howmanysmall/npm-registry-mcp" = "latest"
+"github:howmanysmall/pullhook" = "latest"
+"npm:sherif" = "latest"
+actionlint = "latest"
+betterleaks = "latest"
+bun = "1.3.14"
+hk = "latest"
+ni = "latest"
+node = "26"
+npm = "latest"
+nub = "latest"
+pinact = "latest"
+pkl = "latest"
+pnpm = "11.15.0"
+rumdl = "latest"
+shellcheck = "latest"
+shfmt = "latest"
+tombi = "latest"
+vale = "latest"
+zizmor = "latest"

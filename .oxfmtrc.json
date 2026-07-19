@@ -1,19 +1,17 @@
 {
 	"$schema": "node_modules/oxfmt/configuration_schema.json",
 	"arrowParens": "always",
-	"bracketSameLine": true,
+	"bracketSameLine": false,
 	"bracketSpacing": true,
 	"embeddedLanguageFormatting": "auto",
 	"endOfLine": "lf",
 	"htmlWhitespaceSensitivity": "css",
 	"ignorePatterns": [
-		"**/*.{md,toml}",
+		"**/*.{md,toml,js}",
 		"**/do-not-sync-ever/**",
-		".github/workflows/release.yml",
-		"**/aube-lock.yaml",
-		"skills-lock.json",
-		".vscode/*.json",
-		"tests/fixtures/**"
+		".tsbuildinfo*",
+		"**/*-lock.{json,yaml}",
+		"**/ses_*.json"
 	],
 	"insertFinalNewline": true,
 	"jsdoc": {
@@ -41,15 +39,15 @@
 		},
 		{
 			"files": ["**/*.jsonc"],
-			"options": {
-				"trailingComma": "all"
-			}
+			"options": { "trailingComma": "all" }
 		},
 		{
-			"files": [".oxfmtrc.json", "biome.jsonc"],
-			"options": {
-				"trailingComma": "none"
-			}
+			"files": ["biome.jsonc", ".oxlintrc.json", "knip.jsonc"],
+			"options": { "trailingComma": "none" }
+		},
+		{
+			"files": [".oxfmtrc.json"],
+			"options": { "trailingComma": "all" }
 		}
 	],
 	"printWidth": 120,
@@ -139,7 +137,8 @@
 		"partitionByNewline": false,
 		"sortSideEffects": false
 	},
-	"sortPackageJson": true,
+	"sortPackageJson": { "sortScripts": true },
+	"sortTailwindcss": true,
 	"tabWidth": 4,
 	"trailingComma": "all",
 	"useTabs": true
