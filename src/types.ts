@@ -164,8 +164,11 @@ type RootDefinitionsOf<TSchema> = TSchema extends { readonly definitions: infer 
 
 type LocalReferenceName<TReference extends string> = TReference extends `#/definitions/${infer TName}` ? TName : never;
 
-type ResolveReference<TReference extends string, TRootDefinitions extends SchemaDefinitions> =
-	LocalReferenceName<TReference> extends infer TName extends keyof TRootDefinitions
+type ResolveReference<TReference extends string, TRootDefinitions extends SchemaDefinitions> = [
+	LocalReferenceName<TReference>,
+] extends [never]
+	? unknown
+	: LocalReferenceName<TReference> extends infer TName extends keyof TRootDefinitions
 		? TRootDefinitions[TName]
 		: unknown;
 
@@ -197,6 +200,12 @@ type InferReferenceBranch<TSchema, TRootDefinitions extends SchemaDefinitions> =
 	readonly $ref: infer TReference extends string;
 }
 	? InferSchemaType<ResolveReference<TReference, TRootDefinitions>, TRootDefinitions>
+	: unknown;
+
+type InferNormalizedReferenceBranch<TSchema, TRootDefinitions extends SchemaDefinitions> = TSchema extends {
+	readonly $ref: infer TReference extends string;
+}
+	? InferNormalizedSchemaType<ResolveReference<TReference, TRootDefinitions>, TRootDefinitions>
 	: unknown;
 
 type InferExtendsBranch<TSchema, TRootDefinitions extends SchemaDefinitions> = TSchema extends {
@@ -548,7 +557,7 @@ type InferNormalizedSchemaType<
 > = TSchema extends RuleSchema
 	? SimplifyDeep<
 			ApplyNot<
-				InferReferenceBranch<TSchema, TRootDefinitions> &
+				InferNormalizedReferenceBranch<TSchema, TRootDefinitions> &
 					InferNormalizedDirectSchema<TSchema, TRootDefinitions> &
 					InferAllOf<TSchema, TRootDefinitions> &
 					InferExtendsBranch<TSchema, TRootDefinitions> &

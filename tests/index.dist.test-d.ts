@@ -1,8 +1,19 @@
 import { describe, expectTypeOf, it } from "vitest";
 
-import { defineRule } from "../dist/index";
+import { definePlugin, defineRule } from "../dist/index";
 
-import type { InferContextFromRule, InferOptionsFromSchema, RuleSchemaDefinition } from "../dist/index";
+import type {
+	Context,
+	DefaultOptionsFromSchema,
+	Diagnostic,
+	InferContextFromRule,
+	InferOptionsFromSchema,
+	InferSchemaPropertyType,
+	InferSchemaType,
+	OxlintSettings,
+	RuleSchemaDefinition,
+	RuleSchemaTypeName,
+} from "../dist/index";
 
 interface DefaultedRuntimeOption {
 	readonly springHooks?: ReadonlyArray<string>;
@@ -102,4 +113,48 @@ describe("built index exports", () => {
 			readonly [string, { readonly enabled?: boolean } | undefined, ...ReadonlyArray<"error" | "warn">]
 		>();
 	}, 1000);
+
+	it("dist declarations expose schema and context helper contracts", () => {
+		const enumSchema = {
+			enum: ["a", "b"],
+			type: "string",
+		} as const;
+		const tupleSchema = [enumSchema] as const;
+
+		expectTypeOf<InferSchemaType<typeof enumSchema>>().toEqualTypeOf<"a" | "b">();
+		expectTypeOf<InferSchemaPropertyType<typeof enumSchema>>().toEqualTypeOf<"a" | "b">();
+		expectTypeOf<DefaultOptionsFromSchema<typeof tupleSchema>>().toEqualTypeOf<readonly [("a" | "b")?]>();
+		expectTypeOf<RuleSchemaTypeName>().toEqualTypeOf<
+			"any" | "array" | "boolean" | "integer" | "null" | "number" | "object" | "string"
+		>();
+		expectTypeOf<Context<readonly [string], "invalid">["options"]>().toEqualTypeOf<readonly [string]>();
+		expectTypeOf<Parameters<Context<readonly [], "invalid">["report"]>[0]>().toEqualTypeOf<Diagnostic<"invalid">>();
+		expectTypeOf<OxlintSettings["vitest"]>().toEqualTypeOf<
+			{ readonly [key: string]: unknown; readonly typecheck?: boolean | undefined } | undefined
+		>();
+	});
+
+	it("dist declarations preserve createOnce rules through plugins", () => {
+		const rule = defineRule({
+			createOnce(context) {
+				expectTypeOf(context.options).toEqualTypeOf<readonly [boolean | undefined]>();
+				return {};
+			},
+			meta: {
+				messages: { invalid: "Invalid." },
+				schema: [{ type: "boolean" }] as const,
+			},
+		});
+		const plugin = definePlugin({
+			rules: { typed: rule },
+		});
+
+		expectTypeOf(plugin.rules.typed.createOnce).toBeFunction();
+		expectTypeOf<InferContextFromRule<typeof plugin.rules.typed>["options"]>().toEqualTypeOf<
+			readonly [boolean | undefined]
+		>();
+		expectTypeOf<
+			Parameters<InferContextFromRule<typeof rule>["report"]>[0]["messageId"]
+		>().toEqualTypeOf<"invalid">();
+	});
 });
