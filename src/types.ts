@@ -1,5 +1,3 @@
-/* oxlint-disable max-lines */
-
 import type {
 	Context as OxlintContext,
 	Diagnostic as OxlintDiagnostic,
@@ -18,6 +16,8 @@ import type {
 	UnionToIntersection,
 } from "type-fest";
 
+type ReadonlyRecord<TKey extends number | string | symbol, TValue> = Readonly<Record<TKey, TValue>>;
+
 export type RuleSchemaTypeName = "string" | "number" | "integer" | "boolean" | "object" | "array" | "null" | "any";
 
 export type RuleSchemaValue =
@@ -28,8 +28,8 @@ export type RuleSchemaValue =
 	| ReadonlyArray<RuleSchemaValue>
 	| { readonly [key: string]: RuleSchemaValue };
 
-type RuleSchemaRecord = Readonly<Record<string, RuleSchema>>;
-type RuleSchemaDependencies = Readonly<Record<string, RuleSchema | ReadonlyArray<string>>>;
+type RuleSchemaRecord = ReadonlyRecord<string, RuleSchema>;
+type RuleSchemaDependencies = ReadonlyRecord<string, RuleSchema | ReadonlyArray<string>>;
 
 interface RuleSchemaCommon {
 	readonly $ref?: string;
@@ -153,8 +153,8 @@ export type RuleSchema =
 
 export type RuleSchemaDefinition = false | RuleSchema | ReadonlyArray<RuleSchema>;
 
-type SchemaDefinitions = Readonly<Record<string, RuleSchema>>;
-type EmptyDefinitions = Readonly<Record<never, never>>;
+type SchemaDefinitions = ReadonlyRecord<string, RuleSchema>;
+type EmptyDefinitions = ReadonlyRecord<never, never>;
 type EmptyOptions = readonly [];
 type UnknownOptions = ReadonlyArray<unknown>;
 
@@ -660,11 +660,76 @@ export type Diagnostic<TMessageIds extends string = string> = Readonly<Except<Ox
 	readonly messageId: TMessageIds;
 };
 
+export type CustomComponent =
+	| string
+	| { readonly name: string; readonly attribute: string; readonly [key: string]: unknown }
+	| { readonly name: string; readonly attributes: ReadonlyArray<string>; readonly [key: string]: unknown };
+
+export type TagNamePreference =
+	| string
+	| { readonly message: string; readonly replacement: string }
+	| { readonly message: string }
+	| boolean;
+
+// oxlint-disable-next-line small-rules/prevent-abbreviations -- it is literally called JsDoc
+export interface JsDocPluginSettings {
+	readonly augmentsExtendsReplacesDocs?: boolean | undefined;
+	readonly exemptDestructuredRootsFromChecks?: boolean | undefined;
+	readonly ignoreInternal?: boolean | undefined;
+	readonly ignorePrivate?: boolean | undefined;
+	readonly ignoreReplacesDocs?: boolean | undefined;
+	readonly implementsReplacesDocs?: boolean | undefined;
+	readonly overrideReplacesDocs?: boolean | undefined;
+	readonly tagNamePreference?: Record<string, TagNamePreference> | undefined;
+	readonly [key: string]: unknown;
+}
+
+export interface JsxA11yPluginSettings {
+	readonly attributes?: ReadonlyRecord<string, ReadonlyArray<string>> | undefined;
+	readonly components?: ReadonlyRecord<string, string> | undefined;
+	readonly polymorphicPropName?: string | null | undefined;
+	readonly [key: string]: unknown;
+}
+
+export interface NextPluginSettings {
+	readonly rootDir?: string | ReadonlyArray<string> | undefined;
+	readonly [key: string]: unknown;
+}
+
+export interface ReactPluginSettings {
+	readonly componentWrapperFunctions?: ReadonlyArray<string> | undefined;
+	readonly formComponents?: ReadonlyArray<CustomComponent> | undefined;
+	readonly linkComponents?: ReadonlyArray<CustomComponent> | undefined;
+	readonly version?: string | null | undefined;
+	readonly [key: string]: unknown;
+}
+
+export interface VitestPluginSettings {
+	readonly typecheck?: boolean | undefined;
+	readonly [key: string]: unknown;
+}
+
+export interface JestPluginSettings {
+	readonly version?: number | string | null | undefined;
+	readonly [key: string]: unknown;
+}
+
+export interface OxlintSettings {
+	readonly jest?: JestPluginSettings | undefined;
+	readonly jsdoc?: JsDocPluginSettings | undefined;
+	readonly "jsx-a11y"?: JsxA11yPluginSettings | undefined;
+	readonly next?: NextPluginSettings | undefined;
+	readonly react?: ReactPluginSettings | undefined;
+	readonly vitest?: VitestPluginSettings | undefined;
+	readonly [key: string]: unknown;
+}
+
 export type Context<TOptions extends RuleOptions = EmptyOptions, TMessageIds extends string = string> = Except<
 	OxlintContext,
-	"options" | "report"
+	"options" | "report" | "settings"
 > & {
 	readonly options: TOptions;
+	readonly settings: Readonly<OxlintSettings>;
 	// oxlint-disable-next-line typescript/no-invalid-void-type typescript/method-signature-style -- mirror type
 	report(this: void, diagnostic: Diagnostic<TMessageIds>): void;
 };

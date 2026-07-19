@@ -12,7 +12,7 @@ import type { Plugin, Rule } from "./types";
  * @param plugin - Plugin to define.
  * @returns Same plugin as passed in
  */
-// oxlint-disable-next-line no-explicit-any
+// oxlint-disable-next-line no-explicit-any -- we want to allow any type of rule, but we want to ensure that the rules are of type OxlintRule or Rule<any, any, any>
 export function definePlugin<TRules extends Record<string, OxlintRule | Rule<any, any, any>>>(
 	plugin: Plugin<TRules>,
 ): Plugin<TRules> {

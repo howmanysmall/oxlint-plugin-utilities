@@ -339,6 +339,7 @@
 				"noDuplicateEnumValues": "error",
 				"noEmptyBlockStatements": "error",
 				"noEqualsToNull": "error",
+				"noExplicitAny": "off",
 				"noForIn": "error",
 				"noNestedPromises": "error",
 				"noParametersOnlyUsedInRecursion": "error",
