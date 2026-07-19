@@ -302,7 +302,7 @@ type InferObjectIndexSignature<
 > = [
 	InferPatternPropertyValue<TSchema, TRootDefinitions> | InferAdditionalPropertyValue<TSchema, TRootDefinitions>,
 ] extends [never]
-	? Record<never, never>
+	? ReadonlyRecord<never, never>
 	: {
 			readonly [key: string]:
 				| InferKnownPropertyValue<TProperties, TRootDefinitions>
@@ -380,7 +380,7 @@ type InferObjectSchema<TSchema, TRootDefinitions extends SchemaDefinitions> =
 				TSchema,
 				TRootDefinitions
 			>
-		: Record<string, unknown>;
+		: ReadonlyRecord<string, unknown>;
 
 type InferNormalizedObjectProperties<
 	TProperties extends RuleSchemaRecord,
@@ -493,7 +493,7 @@ type InferNormalizedObjectSchema<TSchema, TRootDefinitions extends SchemaDefinit
 				TSchema,
 				TRootDefinitions
 			>
-		: Record<string, unknown>;
+		: ReadonlyRecord<string, unknown>;
 
 type InferNormalizedDirectSchema<TSchema, TRootDefinitions extends SchemaDefinitions> = TSchema extends {
 	readonly enum: infer TEnum extends ReadonlyArray<unknown>;
@@ -680,7 +680,7 @@ export interface JsDocPluginSettings {
 	readonly ignoreReplacesDocs?: boolean | undefined;
 	readonly implementsReplacesDocs?: boolean | undefined;
 	readonly overrideReplacesDocs?: boolean | undefined;
-	readonly tagNamePreference?: Record<string, TagNamePreference> | undefined;
+	readonly tagNamePreference?: ReadonlyRecord<string, TagNamePreference> | undefined;
 	readonly [key: string]: unknown;
 }
 
@@ -767,7 +767,7 @@ export interface RuleMeta<
 	TDefaultOptions extends DefaultOptionsFromSchema<TSchema> | undefined = undefined,
 > extends Readonly<Except<OxlintRuleMeta, "defaultOptions" | "messages" | "schema">> {
 	readonly defaultOptions?: TDefaultOptions;
-	readonly messages?: Record<TMessageIds, string>;
+	readonly messages?: ReadonlyRecord<TMessageIds, string>;
 	readonly schema?: TSchema;
 }
 
@@ -802,7 +802,7 @@ export type Rule<
 	TDefaultOptions extends DefaultOptionsFromSchema<TSchema> | undefined = undefined,
 > = CreateOnceRule<TSchema, TMessageIds, TDefaultOptions> | CreateRule<TSchema, TMessageIds, TDefaultOptions>;
 
-export interface Plugin<TRules extends Record<string, OxlintRule | Rule>> {
+export interface Plugin<TRules extends ReadonlyRecord<string, OxlintRule | Rule>> {
 	readonly meta?: { readonly name?: string };
 	readonly rules: TRules;
 }
