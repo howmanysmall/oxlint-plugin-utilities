@@ -10,10 +10,9 @@ interface Edit {
 	readonly replaceLength: number;
 }
 
-const JSDOC_BEFORE_DECLARATION =
-	/(?<comment>\/\*\*[\s\S]*?\*\/)(?:\s*\n\s*\/\/[^\n]*)*\s*\n\s*(?:export\s+)?(?:async\s+)?(?:function|const|let|var|class)\s+(?<name>\w+)/gu;
+const DECLARATION_REGEXP = /(?:^|\n)\s*(?:export\s+)?(?:async\s+)?(?:function|const|let|var|class)\s+(?<name>\w+)/gu;
 const TYPESCRIPT_FILE_REGEXP = /\.tsx?$/u;
-const IGNORED_SOURCE_REGEXP = /(?:^|\/)(?:node_modules|dist|tests)\/|(?:\.d|\.test|\.test-d|\.spec)\.ts$/u;
+const IGNORED_SOURCE_REGEXP = /(?:(?:^|\/)(?:node_modules|dist|tests)\/)|(?:(?:\.d|\.test|\.test-d|\.spec)\.ts$)/u;
 const TRAILING_JSDOC_REGEXP = /\/\*\*[\s\S]*?\*\/\s*$/u;
 const REGEXP_REGEXP = /[.*+?^${}()|[\]\\]/gu;
 const WHITESPACE_REGEXP = /\s+/gu;
@@ -61,12 +60,28 @@ function shouldExtractComments(id: string): boolean {
 	return TYPESCRIPT_FILE_REGEXP.test(id) && !IGNORED_SOURCE_REGEXP.test(id);
 }
 
+function getLeadingJsdoc(code: string, declarationIndex: number): string | undefined {
+	const commentStart = code.lastIndexOf("/**", declarationIndex);
+	if (commentStart === -1) return undefined;
+
+	const commentEnd = code.indexOf("*/", commentStart);
+	if (commentEnd === -1 || commentEnd >= declarationIndex) return undefined;
+
+	const gap = code.slice(commentEnd + 2, declarationIndex);
+	if (!gap.includes("\n")) return undefined;
+	if (gap.split("\n").some((line) => line.trim().length > 0 && !line.trimStart().startsWith("//"))) {
+		return undefined;
+	}
+
+	return code.slice(commentStart, commentEnd + 2);
+}
+
 function getStoredComments(code: string): ReadonlyMap<string, string> {
 	const storedComments = new Map<string, string>();
 
-	for (const match of code.matchAll(JSDOC_BEFORE_DECLARATION)) {
-		const comment = match.groups?.comment;
+	for (const match of code.matchAll(DECLARATION_REGEXP)) {
 		const name = match.groups?.name;
+		const comment = getLeadingJsdoc(code, match.index);
 		if (comment !== undefined && name !== undefined) storedComments.set(name, comment);
 	}
 
@@ -95,6 +110,40 @@ function hasExistingComment(code: string, index: number, comment: string): boole
 	return existingComment !== undefined && normalizeComment(existingComment) === normalizeComment(comment);
 }
 
+function findDeclaration(code: string, name: string): RegExpExecArray | undefined {
+	for (const declarationName of getDeclarationNames(code, name)) {
+		const pattern = new RegExp(
+			`([ \\t]*)((?:export\\s+)?(?:default\\s+)?(?:async\\s+)?(?:function|const|let|var|class)\\s+${escapeRegExp(declarationName)})\\b`,
+			"u",
+		);
+		const match = pattern.exec(code);
+		if (match) return match;
+	}
+	return undefined;
+}
+
+function createEdit(
+	code: string,
+	name: string,
+	comment: string,
+	reindentCache: Map<string, Map<string, string>>,
+): Edit | undefined {
+	const match = findDeclaration(code, name);
+	if (!match) return undefined;
+
+	const [, indent, declaration] = match;
+	if (indent === undefined || declaration === undefined) return undefined;
+	if (hasExistingComment(code, match.index, comment)) return undefined;
+
+	const reindented = getReindentedComment(reindentCache, comment, indent);
+	const prefix = match.index > 0 && code[match.index - 1] !== "\n" ? "\n" : "";
+	return {
+		index: match.index,
+		insert: `${prefix}${reindented}\n${indent}${declaration}`,
+		replaceLength: match[0].length,
+	};
+}
+
 function restoreComments(code: string, storedComments: ReadonlyMap<string, string>): string {
 	if (storedComments.size === 0) return code;
 
@@ -102,30 +151,8 @@ function restoreComments(code: string, storedComments: ReadonlyMap<string, strin
 	const edits = new Array<Edit>();
 
 	for (const [name, comment] of storedComments) {
-		let match: RegExpExecArray | undefined;
-		for (const declarationName of getDeclarationNames(code, name)) {
-			const pattern = new RegExp(
-				`([ \\t]*)((?:export\\s+)?(?:default\\s+)?(?:async\\s+)?(?:function|const|let|var|class)\\s+${escapeRegExp(declarationName)})\\b`,
-				"u",
-			);
-			match = pattern.exec(code) ?? undefined;
-			if (match) break;
-		}
-		if (!match) continue;
-
-		const [, indent, declaration] = match;
-		if (indent === undefined || declaration === undefined) continue;
-
-		if (hasExistingComment(code, match.index, comment)) continue;
-
-		const reindented = getReindentedComment(reindentCache, comment, indent);
-		const prefix = match.index > 0 && code[match.index - 1] !== "\n" ? "\n" : "";
-
-		edits.push({
-			index: match.index,
-			insert: `${prefix}${reindented}\n${indent}${declaration}`,
-			replaceLength: match[0].length,
-		});
+		const edit = createEdit(code, name, comment, reindentCache);
+		if (edit) edits.push(edit);
 	}
 
 	if (edits.length === 0) return code;

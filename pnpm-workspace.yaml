@@ -8,9 +8,6 @@ trustPolicyExclude:
 packages:
   - .
 
-# Only allow specific packages to run install scripts
-allowBuilds: {}
-
 strictDepBuilds: true
 strictPeerDependencies: false
 
@@ -48,6 +45,25 @@ minimumReleaseAgeExclude:
   - "@oxfmt/binding-win32-arm64-msvc"
   - "@oxfmt/binding-win32-ia32-msvc"
   - "@oxfmt/binding-win32-x64-msvc"
+  - "@oxlint/binding-android-arm-eabi"
+  - "@oxlint/binding-android-arm64"
+  - "@oxlint/binding-darwin-arm64"
+  - "@oxlint/binding-darwin-x64"
+  - "@oxlint/binding-freebsd-x64"
+  - "@oxlint/binding-linux-arm-gnueabihf"
+  - "@oxlint/binding-linux-arm-musleabihf"
+  - "@oxlint/binding-linux-arm64-gnu"
+  - "@oxlint/binding-linux-arm64-musl"
+  - "@oxlint/binding-linux-ppc64-gnu"
+  - "@oxlint/binding-linux-riscv64-gnu"
+  - "@oxlint/binding-linux-riscv64-musl"
+  - "@oxlint/binding-linux-s390x-gnu"
+  - "@oxlint/binding-linux-x64-gnu"
+  - "@oxlint/binding-linux-x64-musl"
+  - "@oxlint/binding-openharmony-arm64"
+  - "@oxlint/binding-win32-arm64-msvc"
+  - "@oxlint/binding-win32-ia32-msvc"
+  - "@oxlint/binding-win32-x64-msvc"
   - "@typescript/native-preview"
   - "@typescript/native-preview-darwin-arm64"
   - "@typescript/native-preview-darwin-x64"
@@ -73,3 +89,39 @@ fetchTimeout: 60000
 
 strictStorePkgContentCheck: true
 verifyStoreIntegrity: true
+catalogs:
+  build:
+    tsdown: 0.22.3
+  dev:
+    "@arethetypeswrong/core": 0.18.5
+    "@commitlint/config-conventional": 21.2.0
+    "@commitlint/types": 21.2.0
+    "@pobammer-ts/small-rules": 2.7.0
+    "@std/path": jsr:1.1.5
+    "@total-typescript/ts-reset": 0.6.1
+    "@typescript/native-preview": 7.0.0-dev.20260707.2
+    bumpp: 11.1.0
+    changelogithub: 14.0.0
+    commitlint: 21.2.1
+    lookpath: 1.2.3
+    oxfmt: 0.60.0
+    oxlint: 1.75.0
+    oxlint-tsgolint: 7.0.2001
+    pncat: 0.13.0
+    publint: 0.3.21
+    skills: 1.5.20
+    temporal-polyfill: 1.0.1
+  lint:
+    "@biomejs/biome": 2.5.5
+    eslint-plugin-antfu: 3.2.3
+    eslint-plugin-sonarjs: 4.2.0
+    eslint-plugin-unused-imports: 4.4.1
+    knip: 6.27.0
+  prod:
+    "@oxlint/plugins": 1.74.0
+    type-fest: 5.8.0
+  test:
+    "@vitest/coverage-v8": 4.1.10
+    vitest: 4.1.10
+  types:
+    "@types/node": 26.1.1

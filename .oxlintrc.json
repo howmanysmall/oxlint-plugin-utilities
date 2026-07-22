@@ -685,7 +685,7 @@
 		"sonar/useless-string-operation": "off",
 		"sonar/values-not-convertible-to-numbers": "off",
 		"sonar/variable-name": "off",
-		"sonar/void-use": "error",
+		"sonar/void-use": "off",
 		"sonar/weak-ssl": "error",
 		"sonar/web-sql-database": "off",
 		"sonar/x-powered-by": "error",
