@@ -27,10 +27,10 @@
 		"noUnusedParameters": false,
 		"outDir": "./plugins/oxc",
 		"paths": {
-			"@rules/*": ["./plugins/oxc/small-rules/rules/*"],
-			"@utilities/*": ["./plugins/oxc/small-rules/utilities/*"],
 			"#src": ["./src/index.ts"],
-			"#src/*": ["./src/*"]
+			"#src/*": ["./src/*"],
+			"@rules/*": ["./plugins/oxc/small-rules/rules/*"],
+			"@utilities/*": ["./plugins/oxc/small-rules/utilities/*"]
 		},
 		"plugins": [],
 		"pretty": true,

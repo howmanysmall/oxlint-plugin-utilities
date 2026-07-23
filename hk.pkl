@@ -1,0 +1,575 @@
+// hk configuration - https://hk.jdx.dev/
+amends "package://github.com/jdx/hk/releases/download/v1.51.0/hk@1.51.0#/Config.pkl"
+
+import "package://github.com/jdx/hk/releases/download/v1.51.0/hk@1.51.0#/Builtins.pkl"
+
+exclude =
+  List(
+    "node_modules",
+    "dist",
+    "coverage",
+    "report",
+    ".git",
+    ".repos",
+    ".stryker-tmp",
+    "do-not-sync-ever",
+  )
+display_skip_reasons = List()
+terminal_progress = false
+
+local binary_excludes =
+  List(
+    "*.png",
+    "*.jpg",
+    "*.jpeg",
+    "*.gif",
+    "*.webp",
+    "*.ico",
+    "*.woff",
+    "*.woff2",
+    "*.ttf",
+    "*.eot",
+    "*.pdf",
+    "*.zip",
+    "*.tar",
+    "*.gz",
+    "*.mp4",
+    "*.mov",
+  )
+
+local workflow_files =
+  List(
+    ".github/workflows/**/*.yml",
+    ".github/workflows/**/*.yaml",
+  )
+local workflow_action_files =
+  List(
+    ".github/workflows/**/*.yml",
+    ".github/workflows/**/*.yaml",
+    ".github/actions/**/action.yml",
+    ".github/actions/**/action.yaml",
+  )
+local zizmor_files =
+  List(
+    ".github/workflows/**/*.yml",
+    ".github/workflows/**/*.yaml",
+    ".github/actions/**/action.yml",
+    ".github/actions/**/action.yaml",
+    ".github/dependabot.yml",
+  )
+local markdown_files = List("**/*.md", "**/*.markdown", "**/*.mdx")
+local toml_files = List("**/*.toml")
+
+hooks {
+  ["pre-commit"] {
+    fix = true
+    stash = "git"
+    steps {
+      // Tier 1 — Universal checks
+      ["trailing-whitespace"] = (Builtins.trailing_whitespace) {
+        exclude = binary_excludes
+      }
+      ["newlines"] = (Builtins.newlines) {
+        exclude = binary_excludes
+      }
+      ["check-merge-conflict"] = (Builtins.check_merge_conflict) {}
+      ["check-case-conflict"] = (Builtins.check_case_conflict) {}
+      ["check-symlinks"] = (Builtins.check_symlinks) {}
+      ["mixed-line-ending"] = (Builtins.mixed_line_ending) {}
+      ["detect-private-key"] = (Builtins.detect_private_key) {
+        exclude = binary_excludes
+      }
+      ["betterleaks"] = Builtins.betterleaks
+      ["sherif"] = (Builtins.sherif) {
+        check = "sherif -r root-package-private-field -r root-package-dependencies"
+        fix = "sherif --fix --no-install -r root-package-private-field -r root-package-dependencies"
+      }
+
+      // JS/TS pipeline — oxlint + biome + oxfmt
+      ["oxlint"] = (Builtins.ox_lint) {
+        glob =
+          List(
+            "*.js",
+            "*.jsx",
+            "*.ts",
+            "*.tsx",
+            "*.mjs",
+            "*.cjs",
+            "*.mts",
+            "*.cts",
+            "*.astro",
+            "*.mdx",
+          )
+        check = "node --run oxlint -- --no-error-on-unmatched-pattern {{files}}"
+        fix = "node --run oxlint -- --no-error-on-unmatched-pattern --fix {{files}}"
+        check_first = true
+        batch = false
+      }
+      ["biome-js"] = (Builtins.biome) {
+        glob =
+          List(
+            "*.js",
+            "*.jsx",
+            "*.ts",
+            "*.tsx",
+            "*.mjs",
+            "*.cjs",
+            "*.mts",
+            "*.cts",
+            "*.astro",
+            "*.mdx",
+          )
+        check = "node --run biome -- check --no-errors-on-unmatched {{files}}"
+        fix = "node --run biome -- check --write --no-errors-on-unmatched {{files}}"
+        check_first = true
+        batch = false
+        depends = List("oxlint")
+      }
+      ["oxfmt-js"] = (Builtins.oxfmt) {
+        glob = List("*.js", "*.jsx", "*.ts", "*.tsx", "*.mjs", "*.cjs", "*.mts", "*.cts")
+        check = "node --run oxfmt -- --no-error-on-unmatched-pattern --check {{files}}"
+        fix = "node --run oxfmt -- --no-error-on-unmatched-pattern {{files}}"
+        check_first = true
+        depends = List("biome-js")
+      }
+
+      // Biome non-JS — css, html, grit, and JSON-like files
+      ["biome-non-js"] = (Builtins.biome) {
+        glob = List("*.css", "*.html", "*.json", "*.jsonc", "*.grit", "*.code-workspace")
+        check = "node --run biome -- check --no-errors-on-unmatched {{files}}"
+        fix = "node --run biome -- check --write --no-errors-on-unmatched {{files}}"
+        check_first = true
+        batch = false
+      }
+
+      // .astro is intentionally excluded because oxfmt does not support it.
+      ["oxfmt-data"] = (Builtins.oxfmt) {
+        glob =
+          List(
+            "*.json",
+            "*.jsonc",
+            "*.json5",
+            "*.code-workspace",
+            "*.mdx",
+            "*.yaml",
+            "*.yml",
+          )
+        exclude = List("skills-lock.json")
+        check = "node --run oxfmt -- --no-error-on-unmatched-pattern --check {{files}}"
+        fix = "node --run oxfmt -- --no-error-on-unmatched-pattern {{files}}"
+        check_first = true
+        depends = List("biome-js", "biome-non-js")
+      }
+      // Pkl — hk and other typed config files
+      ["pkl-format"] = (Builtins.pkl_format) {
+        glob = List("*.pkl")
+        check_first = true
+      }
+
+      // Shell scripts
+      ["shfmt"] {
+        match_any =
+          List(
+            new Config.FileSelector { glob = List("**/*.sh", "**/*.bash", "**/*.ksh") },
+            new Config.FileSelector { types = List("shell") },
+          )
+        check = "shfmt -bn -ci -sr -d {{files}}"
+        fix = "shfmt -bn -ci -sr -w {{files}}"
+        check_first = true
+      }
+      ["shellcheck"] = (Builtins.shellcheck) {
+        match_any =
+          List(
+            new Config.FileSelector {
+              glob = List("**/*.sh", "**/*.bash", "**/*.ksh", "**/*.dash", "**/*.zsh")
+            },
+            new Config.FileSelector { types = List("shell") },
+          )
+      }
+
+      // GitHub Actions workflows
+      ["actionlint"] = (Builtins.actionlint) {
+        glob = workflow_files
+      }
+      ["zizmor"] = (Builtins.zizmor) {
+        glob = zizmor_files
+      }
+      ["pinact"] {
+        glob = workflow_action_files
+        check = "PINACT_GITHUB_TOKEN=\"$(gh auth token)\" pinact run --verify {{files}}"
+        fix = "PINACT_GITHUB_TOKEN=\"$(gh auth token)\" pinact run {{files}}"
+        check_first = true
+      }
+
+      // Markdown — rumdl lint + fmt
+      ["vale"] = (Builtins.vale) {
+        glob = markdown_files
+      }
+      ["rumdl"] = (Builtins.rumdl) {
+        glob = markdown_files
+        exclude = List(".agents/skills/**/SKILL.md")
+        check = "rumdl check {{files}}"
+        fix =
+          """
+          rumdl check --fix {{files}}
+          rumdl fmt {{files}}
+          """
+        check_first = true
+        batch = true
+      }
+
+      // TOML — tombi lint + format
+      ["tombi"] = (Builtins.tombi) {
+        glob = toml_files
+        check = "tombi lint {{files}} && tombi format --check {{files}}"
+        fix =
+          """
+          tombi lint {{files}}
+          tombi format {{files}}
+          """
+        check_first = true
+        batch = true
+      }
+    }
+  }
+
+  ["commit-msg"] {
+    steps {
+      ["commitlint"] {
+        check =
+          "node --run commitlint -- --strict --config commitlint.config.ts --edit {{commit_msg_file}}"
+      }
+    }
+  }
+
+  ["pre-push"] {
+    steps {
+      ["build"] {
+        glob = List("*.ts", "*.tsx", "*.js", "*.jsx", "*.json", "*.jsonc", "*.toml")
+        check = "node --run build"
+      }
+      ["biome-ci"] {
+        glob =
+          List(
+            "*.css",
+            "*.html",
+            "*.json",
+            "*.jsonc",
+            "*.grit",
+            "*.code-workspace",
+            "*.js",
+            "*.jsx",
+            "*.ts",
+            "*.tsx",
+          )
+        check = "node --run biome -- ci --no-errors-on-unmatched {{files}}"
+      }
+      ["oxlint"] {
+        glob = List("*.js", "*.jsx", "*.ts", "*.tsx")
+        check = "node --run oxlint -- --no-error-on-unmatched-pattern {{files}}"
+      }
+      ["type-check"] {
+        glob = List("*.ts", "*.tsx", "*.js", "*.jsx", "*.json", "*.jsonc")
+        check = "node --run type-check"
+      }
+      ["knip"] {
+        glob = List("*.ts", "*.tsx", "*.js", "*.jsx", "*.json", "*.jsonc", "*.toml")
+        check = "node --run knip"
+      }
+      ["test"] {
+        glob = List("*.ts", "*.tsx", "*.js", "*.jsx", "*.json", "*.jsonc", "*.toml")
+        check = "node --run test"
+      }
+    }
+  }
+
+  ["post-merge"] {
+    steps {
+      ["pullhook"] {
+        check = "pullhook --install"
+      }
+    }
+  }
+
+  ["post-checkout"] {
+    steps {
+      ["pullhook"] {
+        check = "pullhook --install"
+      }
+    }
+  }
+
+  ["post-rewrite"] {
+    steps {
+      ["pullhook"] {
+        check = "pullhook --install"
+      }
+    }
+  }
+
+  // Manual check/fix hooks for CI or local use
+  ["check"] {
+    steps {
+      ["trailing-whitespace"] = (Builtins.trailing_whitespace) {
+        exclude = binary_excludes
+      }
+      ["newlines"] = (Builtins.newlines) {
+        exclude = binary_excludes
+      }
+      ["check-merge-conflict"] = (Builtins.check_merge_conflict) {}
+      ["check-case-conflict"] = (Builtins.check_case_conflict) {}
+      ["check-symlinks"] = (Builtins.check_symlinks) {}
+      ["mixed-line-ending"] = (Builtins.mixed_line_ending) {}
+      ["detect-private-key"] = (Builtins.detect_private_key) {
+        exclude = binary_excludes
+      }
+      ["betterleaks"] = Builtins.betterleaks
+      ["sherif"] = (Builtins.sherif) {
+        check = "sherif -r root-package-private-field -r root-package-dependencies"
+        fix = "sherif --fix --no-install -r root-package-private-field -r root-package-dependencies"
+      }
+      ["oxlint"] = (Builtins.ox_lint) {
+        glob =
+          List(
+            "*.js",
+            "*.jsx",
+            "*.ts",
+            "*.tsx",
+            "*.mjs",
+            "*.cjs",
+            "*.mts",
+            "*.cts",
+            "*.astro",
+            "*.mdx",
+          )
+        check = "node --run oxlint -- --no-error-on-unmatched-pattern {{files}}"
+        batch = true
+      }
+      ["biome-js"] = (Builtins.biome) {
+        glob =
+          List(
+            "*.js",
+            "*.jsx",
+            "*.ts",
+            "*.tsx",
+            "*.mjs",
+            "*.cjs",
+            "*.mts",
+            "*.cts",
+            "*.astro",
+            "*.mdx",
+          )
+        check = "node --run biome -- lint --no-errors-on-unmatched {{files}}"
+        batch = true
+      }
+      ["biome-non-js"] = (Builtins.biome) {
+        glob = List("*.css", "*.html", "*.json", "*.jsonc", "*.grit", "*.code-workspace")
+        check = "node --run biome -- check --no-errors-on-unmatched {{files}}"
+        batch = true
+      }
+      ["oxfmt"] = (Builtins.oxfmt) {
+        glob =
+          List(
+            "*.js",
+            "*.jsx",
+            "*.ts",
+            "*.tsx",
+            "*.mjs",
+            "*.cjs",
+            "*.mts",
+            "*.cts",
+            "*.json",
+            "*.jsonc",
+            "*.json5",
+            "*.code-workspace",
+            "*.mdx",
+            "*.yaml",
+            "*.yml",
+          )
+        check = "node --run oxfmt -- --no-error-on-unmatched-pattern --check {{files}}"
+      }
+      ["pkl-format"] = (Builtins.pkl_format) {
+        glob = List("*.pkl")
+      }
+      ["shfmt"] {
+        match_any =
+          List(
+            new Config.FileSelector { glob = List("**/*.sh", "**/*.bash", "**/*.ksh") },
+            new Config.FileSelector { types = List("shell") },
+          )
+        check = "shfmt -bn -ci -sr -d {{files}}"
+      }
+      ["shellcheck"] = (Builtins.shellcheck) {
+        match_any =
+          List(
+            new Config.FileSelector {
+              glob = List("**/*.sh", "**/*.bash", "**/*.ksh", "**/*.dash", "**/*.zsh")
+            },
+            new Config.FileSelector { types = List("shell") },
+          )
+      }
+      ["actionlint"] = (Builtins.actionlint) {
+        glob = workflow_files
+      }
+      ["zizmor"] = (Builtins.zizmor) {
+        glob = zizmor_files
+      }
+      ["pinact"] {
+        glob = workflow_action_files
+        check = "PINACT_GITHUB_TOKEN=\"$(gh auth token)\" pinact run --verify {{files}}"
+      }
+      ["vale"] = (Builtins.vale) {
+        glob = markdown_files
+      }
+      ["rumdl"] = (Builtins.rumdl) {
+        glob = markdown_files
+        exclude = List(".agents/skills/**/SKILL.md")
+        check = "rumdl check {{files}}"
+      }
+      ["tombi"] = (Builtins.tombi) {
+        glob = toml_files
+        check = "tombi lint {{files}} && tombi format --check {{files}}"
+      }
+    }
+  }
+
+  ["fix"] {
+    fix = true
+    stash = "git"
+    steps {
+      ["trailing-whitespace"] = (Builtins.trailing_whitespace) {
+        exclude = binary_excludes
+      }
+      ["newlines"] = (Builtins.newlines) {
+        exclude = binary_excludes
+      }
+      ["check-case-conflict"] = (Builtins.check_case_conflict) {}
+      ["check-symlinks"] = (Builtins.check_symlinks) {}
+      ["mixed-line-ending"] = (Builtins.mixed_line_ending) {}
+      ["detect-private-key"] = (Builtins.detect_private_key) {
+        exclude = binary_excludes
+      }
+      ["betterleaks"] = Builtins.betterleaks
+      ["sherif"] = (Builtins.sherif) {
+        check = "sherif -r root-package-private-field -r root-package-dependencies"
+        fix = "sherif --fix --no-install -r root-package-private-field -r root-package-dependencies"
+      }
+      ["oxlint"] = (Builtins.ox_lint) {
+        glob =
+          List(
+            "*.js",
+            "*.jsx",
+            "*.ts",
+            "*.tsx",
+            "*.mjs",
+            "*.cjs",
+            "*.mts",
+            "*.cts",
+            "*.astro",
+            "*.mdx",
+          )
+        check = "node --run oxlint -- --no-error-on-unmatched-pattern {{files}}"
+        fix = "node --run oxlint -- --no-error-on-unmatched-pattern --fix {{files}}"
+        batch = true
+      }
+      ["biome-js"] = (Builtins.biome) {
+        glob =
+          List(
+            "*.js",
+            "*.jsx",
+            "*.ts",
+            "*.tsx",
+            "*.mjs",
+            "*.cjs",
+            "*.mts",
+            "*.cts",
+            "*.astro",
+            "*.mdx",
+          )
+        check = "node --run biome -- lint --no-errors-on-unmatched {{files}}"
+        fix = "node --run biome -- lint --write --no-errors-on-unmatched {{files}}"
+        batch = true
+        depends = List("oxlint")
+      }
+      ["biome-non-js"] = (Builtins.biome) {
+        glob = List("*.css", "*.html", "*.json", "*.jsonc", "*.grit", "*.code-workspace")
+        check = "node --run biome -- check --no-errors-on-unmatched {{files}}"
+        fix = "node --run biome -- check --write --no-errors-on-unmatched {{files}}"
+        batch = true
+      }
+      ["oxfmt"] = (Builtins.oxfmt) {
+        glob =
+          List(
+            "*.js",
+            "*.jsx",
+            "*.ts",
+            "*.tsx",
+            "*.mjs",
+            "*.cjs",
+            "*.mts",
+            "*.cts",
+            "*.json",
+            "*.jsonc",
+            "*.json5",
+            "*.code-workspace",
+            "*.mdx",
+            "*.yaml",
+            "*.yml",
+          )
+        check = "node --run oxfmt -- --no-error-on-unmatched-pattern --check {{files}}"
+        fix = "node --run oxfmt -- --no-error-on-unmatched-pattern {{files}}"
+        depends = List("biome-js", "biome-non-js")
+      }
+      ["pkl-format"] = (Builtins.pkl_format) {
+        glob = List("*.pkl")
+      }
+      ["shfmt"] {
+        match_any =
+          List(
+            new Config.FileSelector { glob = List("**/*.sh", "**/*.bash", "**/*.ksh") },
+            new Config.FileSelector { types = List("shell") },
+          )
+        fix = "shfmt -bn -ci -sr -w {{files}}"
+      }
+      ["shellcheck"] = (Builtins.shellcheck) {
+        match_any =
+          List(
+            new Config.FileSelector {
+              glob = List("**/*.sh", "**/*.bash", "**/*.ksh", "**/*.dash", "**/*.zsh")
+            },
+            new Config.FileSelector { types = List("shell") },
+          )
+      }
+      ["actionlint"] = (Builtins.actionlint) {
+        glob = workflow_files
+      }
+      ["zizmor"] = (Builtins.zizmor) {
+        glob = zizmor_files
+      }
+      ["pinact"] {
+        glob = workflow_action_files
+        fix = "PINACT_GITHUB_TOKEN=\"$(gh auth token)\" pinact run {{files}}"
+      }
+      ["vale"] = (Builtins.vale) {
+        glob = markdown_files
+      }
+      ["rumdl"] = (Builtins.rumdl) {
+        glob = markdown_files
+        exclude = List(".agents/skills/**/SKILL.md")
+        fix =
+          """
+          rumdl check --fix {{files}}
+          rumdl fmt {{files}}
+          """
+      }
+      ["tombi"] = (Builtins.tombi) {
+        glob = toml_files
+        fix =
+          """
+          tombi lint {{files}}
+          tombi format {{files}}
+          """
+      }
+    }
+  }
+}

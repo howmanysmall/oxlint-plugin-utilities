@@ -148,3 +148,6 @@ documentation/.astro
 screenshots/
 
 .omo/
+.agents/skills/pnpm/
+.agents/skills/tsdown/
+.agents/skills/vitest/

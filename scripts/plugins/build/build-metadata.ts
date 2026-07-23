@@ -1,4 +1,5 @@
 import { execFileSync } from "node:child_process";
+import { lookpath } from "lookpath";
 import { Temporal } from "temporal-polyfill";
 
 import type { TsdownPlugin } from "tsdown";
@@ -11,10 +12,14 @@ function stringifyUnknownError(error: unknown): string {
 	return error instanceof Error ? error.message : String(error);
 }
 
-function getGitCommit(): string {
+async function getGitCommitAsync(): Promise<string> {
 	try {
-		// oxlint-disable-next-line node/no-sync -- git is required for build metadata
-		return execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim();
+		const gitPath = await lookpath("git");
+		if (gitPath === undefined) {
+			console.warn("[build-metadata] Failed to find Git (somehow?)");
+			return "unknown";
+		}
+		return execFileSync(gitPath, ["rev-parse", "HEAD"], { encoding: "utf8" }).trim();
 	} catch (error) {
 		console.warn(`[build-metadata] Failed to read git commit - ${stringifyUnknownError(error)}`);
 		return "unknown";
@@ -23,9 +28,11 @@ function getGitCommit(): string {
 
 export function createBuildMetadataPlugin({ version }: BuildMetadataOptions): TsdownPlugin {
 	return {
-		generateBundle(): void {
+		// oxlint-disable-next-line small-rules/require-async-suffix -- not in my control.
+		async generateBundle(): Promise<void> {
+			const commit = await getGitCommitAsync();
 			const metadata = {
-				commit: getGitCommit(),
+				commit,
 				time: Temporal.Now.instant().toString({ smallestUnit: "millisecond" }),
 				version,
 			};

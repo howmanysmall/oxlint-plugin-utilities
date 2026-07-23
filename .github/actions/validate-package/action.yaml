@@ -17,7 +17,7 @@ inputs:
   lint-command:
     description: Lint command to run
     required: false
-    default: aube run lint
+    default: node --run lint
   upload-artifact:
     description: Upload dist as an artifact
     required: false
@@ -29,24 +29,26 @@ runs:
     - name: Biome CI
       if: inputs.check-biome == 'true'
       shell: bash
-      run: aube run biome ci
+      run: node --run biome -- ci
 
     - name: Build
       shell: bash
-      run: aube run build
+      run: node --run build
 
     - name: Lint
+      env:
+        LINT_COMMAND: ${{ inputs.lint-command }}
       shell: bash
-      run: ${{ inputs.lint-command }}
+      run: ${LINT_COMMAND}
 
     - name: Type Checking
       shell: bash
-      run: aube run type-check
+      run: node --run type-check
 
     - name: Knip
       if: inputs.check-knip == 'true'
       shell: bash
-      run: aube run knip
+      run: node --run knip
 
     - name: Assert build artifacts exist
       shell: bash
@@ -64,7 +66,7 @@ runs:
 
     - name: Upload build artifacts
       if: inputs.upload-artifact == 'true'
-      uses: actions/upload-artifact@v7
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
       with:
         name: ${{ inputs.artifact-name }}
         path: dist/

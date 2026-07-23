@@ -1,5 +1,8 @@
 name: ci
 
+permissions:
+  contents: read
+
 on:
   push:
     branches:
@@ -10,12 +13,13 @@ on:
       - "scripts/**/*.ts"
       - ".github/actions/**/*.yaml"
       - "package.json"
-      - "aube-lock.yaml"
-      - "aube-workspace.yaml"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
       - "mise.lock"
       - "mise.toml"
       - "knip.ts"
       - "tsconfig*.json"
+      - "tsdown.config.ts"
       - "vitest.config.ts"
       - ".oxlintrc.json"
       - "biome.jsonc"
@@ -26,12 +30,13 @@ on:
       - "scripts/**/*.ts"
       - ".github/actions/**/*.yaml"
       - "package.json"
-      - "aube-lock.yaml"
-      - "aube-workspace.yaml"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
       - "mise.lock"
       - "mise.toml"
       - "knip.ts"
       - "tsconfig*.json"
+      - "tsdown.config.ts"
       - "vitest.config.ts"
       - ".oxlintrc.json"
       - "biome.jsonc"
@@ -41,7 +46,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
 
       - name: Setup build environment
         uses: ./.github/actions/setup
@@ -51,7 +58,7 @@ jobs:
         with:
           check-biome: "true"
           check-knip: "true"
-          lint-command: aube run oxc .
+          lint-command: node --run oxc
 
       - name: Tests
-        run: aube run test
+        run: node --run test
